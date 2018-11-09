@@ -66,6 +66,9 @@ load("data/DBdata-model_fits_included.RData")
 #cooperative data from "Conservation incentives and collective choices in cooperative fisheries" paper (Ovando et al 2013)
 jc_coop <- read_csv("data/clean_cooperatives_data.csv")
 
+#EDF turf data
+edf_turf <- read_excel("data/EDF_TURF_data.xlsx")
+
 ```
 
 
