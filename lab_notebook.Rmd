@@ -215,3 +215,22 @@ RAMS_ITQ_projection <- match(ITQ_projection_year$CommYear, ram_merge$CommYear)
 ```
 
 
+##edf turf data wrangling
+```{r}
+
+edf_turf_unite <- edf_turf %>% unite(SciName, genus, species, sep = " ")
+
+edf_turf_simple <- select(edf_turf_unite, "country", "start_date", "SciName")
+
+colnames(edf_turf_simple) <- c("Country", "turfstart", "SciName")
+
+##want to merge the edf simple with ITQ/Projections but maybe wait for Gina to respond with her TURF data
+##in ITQ data says only one species of fish in japan has TURFs but not true
+
+edf_projection_itq <- merge(ITQ_projection, edf_turf_simple, by = c("Country", "SciName"))
+#only three species from the EDF data match with the species from the upside/projection data; all in Japan
+
+```
+
+
+Need to create new dataset (half upside half ITQ): Species, turf/itq, country,and then matching all the parameters with the species
