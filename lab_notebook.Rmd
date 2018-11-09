@@ -67,28 +67,11 @@ number_species <- unique(stock$scientificname)
 ```
 
 
-#RAM data wrangling
-```{r}
-
-ram <- select(timeseries_values_views, "stockid", "stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
-
-colnames(ram) <- c("stockid", "CommName", "Year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
-
-ram_merge <- ram %>%
-  unite(Name_Year, "CommName", "Year", sep = "-")
-
-ITQ_projection_year <- ITQ_projection %>%
-  unite(Name_Year, "CommName", "Year", sep = "-")
-
-```
-
-
 Important/Necessary Data
 tcbest.data #the best estimate of catch for that stock
 tbbest.dat # the best estimate of biomass for that stock
 divbpref # B/bmsy
 divupref.data # u/umsy
-
 
 
 Juliette Notes:
@@ -125,3 +108,112 @@ ITQ_projection_merge <- merge(unite_projection,countries_ITQ_simple, by = c("ass
 ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf, species, sep = "-")
 
 ```
+
+
+#Graphs for fun
+
+ABARES_BGRDRSE
+implemented ITQs in 1992
+```{r}
+
+ABARES_BGRDRSE <- filter(ITQ_projection, IdOrig == "ABARES-BGRDRSE-1960-2011-CHING")
+
+graph_ABARES_BGRDRSE <-ggplot(ABARES_BGRDRSE, aes(x=Year, y=Biomass))+
+  geom_line(size=1)+
+  ggtitle("ABARES_BGRDRSE (Australia")+
+  geom_point()+
+  geom_line()+
+  labs(x="Year", y="Yearly total biomass")+
+  theme_classic()+
+  scale_x_continuous(expand=c(0,0))+
+  scale_y_continuous(expand=c(0,0))+
+  geom_vline(xintercept = 1992)+
+  theme(legend.title=element_blank())
+
+ggplotly(graph_ABARES_BGRDRSE)
+
+#figure out an if then statement for line?
+
+
+```
+
+
+ADFG-HERRTOGE
+never implemented ITQs
+```{r}
+ADFG_HERRTOGE <- filter(ITQ_projection, IdOrig == "ADFG-HERRTOG-1990-2010-HIVELY")
+
+graph_ADFG_HERRTOGE <-ggplot(ADFG_HERRTOGE, aes(x=Year, y=Biomass))+
+  geom_line(size=1)+
+  ggtitle("ADFG-HERRTOGE (USA)")+
+  geom_point()+
+  geom_line()+
+  labs(x="Year", y="Yearly total biomass")+
+  theme_classic()+
+  scale_x_continuous(expand=c(0,0))+
+  scale_y_continuous(expand=c(0,0))+
+  theme(legend.title=element_blank())
+
+ggplotly(graph_ADFG_HERRTOGE)
+
+#figure out an if then statement for line?
+```
+
+
+
+#RAM data wrangling
+```{r}
+ram <- select(timeseries_values_views, "stockid", "stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
+
+colnames(ram) <- c("stockid", "CommName", "Year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
+
+ram_merge <- ram %>%
+  unite(Name_Year, "CommName", "Year", sep = "-")
+
+ITQ_projection_year <- ITQ_projection %>%
+  unite(Name_Year, "CommName", "Year", sep = "-")
+```
+
+
+#Attemps at merging ITQ_projection with rams
+Playing with Data
+
+```{r}
+
+IdOrig <- unique(ITQ_projection$IdOrig)
+IdOrig
+#337 species total
+
+ITQ_projection_implemented <- filter(ITQ_projection, programstart != "NA")
+
+IdOrig_implemented <- unique(ITQ_projection_implemented$IdOrig)
+IdOrig_implemented
+#115 species with ITQ implemented
+
+```
+
+
+#Total number of species with stocks
+#Number of stocks with ITQs implemented
+```{r}
+IdOrig <- unique(ITQ_projection$IdOrig)
+IdOrig
+#337 species total
+
+ITQ_projection_implemented <- filter(ITQ_projection, programstart != "NA")
+
+IdOrig_implemented <- unique(ITQ_projection_implemented$IdOrig)
+IdOrig_implemented
+#115 species with ITQ implemented
+```
+
+
+Attemts at updating ITQ_projection with Rams
+```{r}
+
+##this doesn't work
+RAMS_ITQ_projection <- match(ITQ_projection_year$CommYear, ram_merge$CommYear)
+
+```
+
+
