@@ -8,3 +8,120 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+
+#Loading packages
+```{r}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(tidyr)
+  library(here)
+  library(ggplot2)
+  library(dplyr)
+  library(readxl)
+  library(devtools)
+  library(plotly)
+  library(base)
+  library(rio)
+})
+
+
+```
+
+#converting projection csv into rds
+no longer need the code because have already used it to create the files
+```{r}
+
+#Upside data
+#projection_data_csv <- read_csv("data/ProjectionData.csv")
+
+#saveRDS(projection_data_csv, "projection_data.rds")
+
+#WDPA_Nov2018.csv <- read_csv("data/WDPA_Nov2018.csv")
+
+#saveRDS(WDPA_Nov2018.csv, "WDPA_Nov2018.rds")
+
+```
+
+
+
+#Load Data
+```{r}
+
+#Corbet data: when countries began using RBFs
+countries_ITQ <- read_excel("data/Countries_ITQ.xlsx")
+
+#Upside data
+projection_data <- readRDS("data/projection_data.rds")
+
+#MPA data
+MPA <- readRDS("data/WDPA_Nov2018.rds")
+
+#RAMS
+load("data/DBdata-model_fits_included.RData")
+
+number_species <- unique(stock$scientificname)
+#341 different species
+
+
+```
+
+
+#RAM data wrangling
+```{r}
+
+ram <- select(timeseries_values_views, "stockid", "stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
+
+colnames(ram) <- c("stockid", "CommName", "Year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
+
+ram_merge <- ram %>%
+  unite(Name_Year, "CommName", "Year", sep = "-")
+
+ITQ_projection_year <- ITQ_projection %>%
+  unite(Name_Year, "CommName", "Year", sep = "-")
+
+```
+
+
+Important/Necessary Data
+tcbest.data #the best estimate of catch for that stock
+tbbest.dat # the best estimate of biomass for that stock
+divbpref # B/bmsy
+divupref.data # u/umsy
+
+
+
+Juliette Notes:
+
+Handy functions for updating data frames:
+match()
+separate()
+
+Useful Websites:
+https://uc-r.github.io/tidyr
+
+#Data Wrangling: Projection and Countries ITQ
+```{r}
+
+#seperate out IdOrig column for Projection Data
+separate_projection <- projection_data %>% separate(IdOrig, c("agency", "stock", "t0", "tf", "species"))
+    ###unsure what the last column actually is, double check
+
+head(separate_projection, 10)
+
+#reunite just the two parts we care about: agency and stock
+unite_projection <- separate_projection %>% unite(assess_id_short, agency, stock, sep = "-")
+
+#simplifying Countries ITQ with unique columns to prepare to merge
+countries_ITQ_simple <- select(countries_ITQ, "assess_id_short", "year", "yearitq", "region_id", "idnumber", "harvest_fb", "itq_now", "iq", "itq", "ivq", "coop", "communityquota", "turf", "individualeffort", "iteq", "totalappliedeffort", "producerorg", "aquaculture", "programstart")
+
+#rename year to be capitalized to merge with projection data
+colnames(countries_ITQ_simple) <- c("assess_id_short", "Year", "yearitq", "region_id", "idnumber", "harvest_fb", "itq_now", "iq", "itq", "ivq", "coop", "communityquota", "turf", "individualeffort", "iteq", "totalappliedeffort", "producerorg", "aquaculture", "programstart")
+
+#merging ITQ and Projection
+ITQ_projection_merge <- merge(unite_projection,countries_ITQ_simple, by = c("assess_id_short", "Year"))
+
+#cleaning it up
+ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf, species, sep = "-")
+
+```
