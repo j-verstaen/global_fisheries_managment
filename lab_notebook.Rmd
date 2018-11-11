@@ -91,16 +91,18 @@ https://uc-r.github.io/tidyr
 
 #RAM data wrangling
 ```{r}
-ram <- select(timeseries_values_views, "stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
+ram <- timeseries_values_views %>%
+  select("stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref") %>%
+  add_column("RAM")
 
-colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy")
+colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy", "DBase")
 
-ram_2012 <- ram %>%
-  filter(Year > "2012") 
+#ram_2012 <- ram %>%
+#  filter(Year > "2012") 
 ##this wont work because projection data has projected out past 2012. need to UPDATE
 
 #updated 
-projection_ram <- bind_rows(list(projection_data, ram_2012))
+#projection_ram <- bind_rows(list(projection_data, ram_2012))
 
 2012-1950
 #62
@@ -121,18 +123,18 @@ yearcheck
 
 join_project_ram <- join(projection_data, ram, by = c("CommName", "Year"), type = "full")
 
-#check that is worked
-projectramcheck <- join_project_ram %>%
-  filter(Year == "2013") %>%
-  select("IdOrig", "Year", "CommName")
+projectramcheck <- filter(join_project_ram, IdOrig == "NA")
+#returns no rows with NA, could still be right if updated projected 
 
+#Checking to see if better way to do join
+# end up with WAY to many rows, something is off
+#unite_projection_commname <- projection_data %>% 
+#  unite(name_year, CommName, Year, sep = "-")
+#unite_ram_commname <- ram %>% 
+#  unite (name_year, CommName, Year, sep = "-")
+#join_project_ram_2 <- join(unite_projection_commname, unite_projection_commname, by = "name_year", type = "left")
 
-unite_projection_commname <- projection_data %>% 
-  unite(name_year, CommName, Year, sep = "-")
-unite_ram_commname <- ram %>% 
-  unite (name_year, CommName, Year, sep = "-")
-join_project_ram_2 <- join(unite_projection_commname, unite_projection_commname, by = "name_year", type = "full")
-
+match_project_ram <- match(projection_data, ram)
 
 ```
 
@@ -169,15 +171,15 @@ Playing with Data
 #Total number of species with stocks
 #Number of stocks with ITQs implemented
 ```{r}
-IdOrig <- unique(ITQ_projection$IdOrig)
+IdOrig <- unique(ITQ_projection$SciName)
 IdOrig
-#337 species total
+#1228 species total
 
 ITQ_projection_implemented <- filter(ITQ_projection, programstart != "NA")
 
-IdOrig_implemented <- unique(ITQ_projection_implemented$IdOrig)
+IdOrig_implemented <- unique(ITQ_projection_implemented$SciName)
 IdOrig_implemented
-#115 species with ITQ implemented
+#80 species with ITQ implemented
 ```
 
 

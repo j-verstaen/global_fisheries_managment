@@ -86,16 +86,28 @@ ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf
 #Total number of species with stocks
 #Number of stocks with ITQs implemented
 ```{r}
-IdOrig <- unique(ITQ_projection$IdOrig)
+IdOrig <- unique(ITQ_projection$SciName)
 IdOrig
-#337 species total
+#1228 species total
 
 ITQ_projection_implemented <- filter(ITQ_projection, programstart != "NA")
 
-IdOrig_implemented <- unique(ITQ_projection_implemented$IdOrig)
+IdOrig_implemented <- unique(ITQ_projection_implemented$SciName)
 IdOrig_implemented
-#115 species with ITQ implemented
+#80 species with ITQ implemented
 ```
+
+
+#Simplified Projection Data
+```{r}
+
+ITQ_projection_simple <- ITQ_projection %>%
+  select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "Catch", "Biomass", "BvBmsy", "FvFmsy","MSY", "Price", "g", "k", "c", "phi", "yearitq", "itq_now", "turf", "programstart")
+
+```
+
+
+
 
 
 
