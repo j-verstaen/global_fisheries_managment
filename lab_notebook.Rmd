@@ -23,6 +23,7 @@ suppressPackageStartupMessages({
   library(plotly)
   library(base)
   library(rio)
+  library(plyr)
 })
 
 
@@ -88,11 +89,59 @@ separate()
 Useful Websites:
 https://uc-r.github.io/tidyr
 
+#RAM data wrangling
+```{r}
+ram <- select(timeseries_values_views, "stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
+
+colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy")
+
+ram_2012 <- ram %>%
+  filter(Year > "2012") 
+##this wont work because projection data has projected out past 2012. need to UPDATE
+
+#updated 
+projection_ram <- bind_rows(list(projection_data, ram_2012))
+
+2012-1950
+#62
+2050- 2012
+#38
+162+38
+
+acheck <- filter(projection_ram, Year == "2013") %>%
+  select("IdOrig", "CommName", "Year", "Biomass")
+
+acheck_count <- unique(acheck$IdOrig)
+acheck_count
+#4714
+
+yearcheck <- unique(projection_data$Year)
+yearcheck
+#101 years starts 1950 end 2050
+
+join_project_ram <- join(projection_data, ram, by = c("CommName", "Year"), type = "full")
+
+#check that is worked
+projectramcheck <- join_project_ram %>%
+  filter(Year == "2013") %>%
+  select("IdOrig", "Year", "CommName")
+
+
+unite_projection_commname <- projection_data %>% 
+  unite(name_year, CommName, Year, sep = "-")
+unite_ram_commname <- ram %>% 
+  unite (name_year, CommName, Year, sep = "-")
+join_project_ram_2 <- join(unite_projection_commname, unite_projection_commname, by = "name_year", type = "full")
+
+
+```
+
+
 #Data Wrangling: Projection and Countries ITQ
 ```{r}
 
 #seperate out IdOrig column for Projection Data
-separate_projection <- projection_data %>% separate(IdOrig, c("agency", "stock", "t0", "tf", "species"))
+separate_projection <- projection_ram %>% separate(IdOrig, c("agency", "stock", "t0", "tf", "data_enterer"))
     ###unsure what the last column actually is, double check
 
 head(separate_projection, 10)
@@ -106,11 +155,12 @@ countries_ITQ_simple <- select(countries_ITQ, "assess_id_short", "year", "yearit
 #rename year to be capitalized to merge with projection data
 colnames(countries_ITQ_simple) <- c("assess_id_short", "Year", "yearitq", "region_id", "idnumber", "harvest_fb", "itq_now", "iq", "itq", "ivq", "coop", "communityquota", "turf", "individualeffort", "iteq", "totalappliedeffort", "producerorg", "aquaculture", "programstart")
 
-#merging ITQ and Projection
-ITQ_projection_merge <- merge(unite_projection,countries_ITQ_simple, by = c("assess_id_short", "Year"))
+
+ITQ_projection_merge <- merge(unite_projection, countries_ITQ_simple, by = c("assess_id_short", "Year"), all = TRUE)
+
 
 #cleaning it up
-ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf, species, sep = "-")
+ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf, data_enterer, sep = "-")
 
 ```
 
@@ -187,22 +237,10 @@ divbpref # B/bmsy
 divupref.data # u/umsy
 
 
-#RAM data wrangling
-```{r}
-ram <- select(timeseries_values_views, "stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref")
-
-colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy")
-
-ram_merge <- ram %>%
-  unite(Name_Year, "CommName", "Year", sep = "-")
-
-ITQ_projection_year <- ITQ_projection %>%
-  unite(Name_Year, "CommName", "Year", sep = "-")
-
-```
 
 
-Attemts at updating ITQ_projection with Rams
+Attempts at updating ITQ_projection with Rams
+#asked ana about this -> waiting to hear back
 ```{r}
 
 ##this doesn't work; gives you vector not updated data frame
@@ -216,6 +254,7 @@ RAMS_ITQ_projection <- match(ITQ_projection_year$CommYear, ram_merge$CommYear)
 
 
 ##edf turf data wrangling
+# waiting for data from Gina if its more comprehensive than the EDF one
 ```{r}
 
 edf_turf_unite <- edf_turf %>% unite(SciName, genus, species, sep = " ")
