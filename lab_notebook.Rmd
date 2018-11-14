@@ -261,7 +261,11 @@ RAMS_ITQ_projection <- match(ITQ_projection_year$CommYear, ram_merge$CommYear)
 
 edf_turf_unite <- edf_turf %>% unite(SciName, genus, species, sep = " ")
 
-edf_turf_simple <- select(edf_turf_unite, "country", "start_date", "SciName")
+
+edf_turf_simple <- edf_turf_unite %>%
+  add_column("turf") %>%
+  select("country", "start_date", "SciName") %>%
+  gsub('\\bNA NA\\b', 'NA')
 
 colnames(edf_turf_simple) <- c("Country", "turfstart", "SciName")
 
@@ -275,3 +279,117 @@ edf_projection_itq <- merge(ITQ_projection, edf_turf_simple, by = c("Country", "
 
 
 Need to create new dataset (half upside half ITQ): Species, turf/itq, country,and then matching all the parameters with the species
+
+
+################
+################
+###############
+PART 2
+
+From updating_projection.R script file
+```{r}
+
+#Load Data
+#Upside data
+projection_data <- readRDS("data/projection_data.rds")
+
+#RAMS
+load("data/DBdata-model_fits_included.RData")
+
+#Corbet data: when countries began using RBFs
+countries_ITQ <- read_excel("data/Countries_ITQ.xlsx")
+
+
+
+#RAM Data Tiddying
+ram <- timeseries_values_views %>%
+  select("stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref") %>%
+  add_column("RAM")
+
+colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy", "DBase")
+
+
+#Update Projection with RAM
+projection_updated <- join(projection_data, ram, by = c("CommName", "Year"), type = "full")
+
+#Merge Projection and ITQ
+#seperate out IdOrig column for Projection Data
+separate_projection <- projection_updated %>% separate(IdOrig, c("agency", "stock", "t0", "tf", "data_enterer"))
+
+head(separate_projection, 10)
+
+#reunite just the two parts we care about: agency and stock
+unite_projection <- separate_projection %>% unite(assess_id_short, agency, stock, sep = "-")
+
+#simplifying Countries ITQ with unique columns to prepare to merge
+countries_ITQ_simple <- select(countries_ITQ, "assess_id_short", "year", "yearitq", "region_id", "idnumber", "harvest_fb", "itq_now", "iq", "itq", "ivq", "coop", "communityquota", "turf", "individualeffort", "iteq", "totalappliedeffort", "producerorg", "aquaculture", "programstart")
+
+#rename year to be capitalized to merge with projection data
+colnames(countries_ITQ_simple) <- c("assess_id_short", "Year", "yearitq", "region_id", "idnumber", "harvest_fb", "itq_now", "iq", "itq", "ivq", "coop", "communityquota", "turf", "individualeffort", "iteq", "totalappliedeffort", "producerorg", "aquaculture", "programstart")
+
+ITQ_projection_merge <- merge(unite_projection, countries_ITQ_simple, by = c("assess_id_short", "Year"), all = TRUE)
+
+#cleaning it up
+ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf, data_enterer, sep = "-")
+
+
+#Simplified Projection Data
+ITQ_projection_simple <- ITQ_projection %>%
+  select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "Catch", "Biomass", "BvBmsy", "FvFmsy","MSY", "Price", "g", "k", "c", "phi", "yearitq", "itq_now","iq", "itq", "ivq", "turf", "programstart")
+
+
+#create RDS from datafram
+#saveRDS(ITQ_projection_simple, "projection_updated.rds")
+
+```
+
+
+
+1) pull the ITQ, IVQ, IQ fisheries out of upside.
+2) pull the TURF fisheries from EDF.
+3) For each fishery, we want species, location, and ITQ vs. TURF.
+
+```{r}
+
+# create dataframe with 
+itq <- ITQ_projection %>%
+  select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "yearitq", "itq_now","iq", "itq", "ivq", "turf", "programstart")
+
+#Load EDF TURF data
+
+edf_turf <- read_excel("data/EDF_TURF_data.xlsx")
+
+```
+
+
+```{r}
+
+edf_turf_unite <- edf_turf %>% unite(SciName, genus, species, sep = " ")
+
+edf_turf_simple <- select(edf_turf_unite, "country", "start_date", "SciName")
+
+colnames(edf_turf_simple) <- c("Country", "programstart", "SciName")
+
+##want to merge the edf simple with ITQ/Projections but maybe wait for Gina to respond with her TURF data
+##in ITQ data says only one species of fish in japan has TURFs but not true
+
+edf_projection_1 <- join(edf_turf_simple, itq, by = c("Country", "programstart", "SciName"), type = "full")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -63,8 +63,8 @@ ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf
 ITQ_projection_simple <- ITQ_projection %>%
   select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "Catch", "Biomass", "BvBmsy", "FvFmsy","MSY", "Price", "g", "k", "c", "phi", "yearitq", "itq_now", "turf", "programstart")
 
-#create CSV file from datafram
-write.csv(ITQ_projection_simple, file = "ITQ_projection_updated.csv")
+#create RDS from datafram
+#saveRDS(ITQ_projection_simple, "projection_updated.rds")
 
 
 
