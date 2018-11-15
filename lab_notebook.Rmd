@@ -353,27 +353,43 @@ ITQ_projection_simple <- ITQ_projection %>%
 
 # create dataframe with 
 itq <- ITQ_projection %>%
-  select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "yearitq", "itq_now","iq", "itq", "ivq", "turf", "programstart")
+  select("Country", "Year", "SciName", "itq_now","iq", "itq", "ivq", "turf", "programstart")
 
 #Load EDF TURF data
 
 edf_turf <- read_excel("data/EDF_TURF_data.xlsx")
+
+#load in DiscoverTURFs data
+
+d_turfs <- read_excel("data/DiscoverTURFs_simple.xlsx")
 
 ```
 
 
 ```{r}
 
-edf_turf_unite <- edf_turf %>% unite(SciName, genus, species, sep = " ")
 
-edf_turf_simple <- select(edf_turf_unite, "country", "start_date", "SciName")
+edf_turf_simple <- select(edf_turf, "country", "start_date", "SciName", "turf")
+#create new column that says "turf" and TRUE or FALSE
 
-colnames(edf_turf_simple) <- c("Country", "programstart", "SciName")
 
-##want to merge the edf simple with ITQ/Projections but maybe wait for Gina to respond with her TURF data
-##in ITQ data says only one species of fish in japan has TURFs but not true
+colnames(edf_turf_simple) <- c("Country", "programstart", "SciName", "turf")
 
-edf_projection_1 <- join(edf_turf_simple, itq, by = c("Country", "programstart", "SciName"), type = "full")
+#combining edf turf data from upside data
+edf_projection_1 <- join(edf_turf_simple, itq, by = c("Country", "programstart", "SciName", "turf"), type = "full")
+
+#combine edf/upside with discover turfs
+all_turf_1 <- join(edf_projection_1, d_turfs, by = c("Country", "SciName", "turf"), type = "full")
+
+#change "blank" NAs to real NAs
+all_turf_1[is.na(all_turf_1)] <- "NA"
+
+#rearrange columns
+all_turf_2 <- all_turf_1[, c(1,3,5,2,6,7,8,9,4)]
+
+#turning NAs from no ITQ data to FALSE
+
+all_turf_2 %>% replace(is.na(.), FALSE)
 
 ```
 
