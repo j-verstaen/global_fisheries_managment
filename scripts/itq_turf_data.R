@@ -1,4 +1,6 @@
-##Creating datafram with countries, species, and itq/turf info
+################################################################
+##Creating dataframe with countries, species, and itq/turf info##
+################################################################
 
 #Load Packages
 suppressPackageStartupMessages({
@@ -44,6 +46,17 @@ all_turf_1 <- join(edf_projection_1, d_turfs, by = c("Country", "SciName", "turf
 all_turf_1[is.na(all_turf_1)] <- "NA"
 
 #rearrange columns
-all_turf_2 <- all_turf_1[, c(1,3,2,5,6,7,8,4)]
+all_turf_itq <- all_turf_1[, c(1,3,2,5,6,7,8,4)]
 
-#rename itq_now from NA -> 0 and all other NAs to FALSE
+#turning NAs from no ITQ data to FALSE
+#all_turf_2[all_turf_2 == 0] <- NA
+
+all_turf_itq$iq[is.na(all_turf_itq$iq)] <- FALSE
+
+all_turf_itq$itq[is.na(all_turf_itq$itq)] <- FALSE
+
+all_turf_itq$ivq[is.na(all_turf_itq$ivq)] <- FALSE
+
+all_turf_itq$itq_now[is.na(all_turf_itq$itq_now)] <- 0
+
+

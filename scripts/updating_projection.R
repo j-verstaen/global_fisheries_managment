@@ -75,6 +75,7 @@ upside_2018_updated <- ITQ_projection %>%
 
 #create RDS from dataframe
 #saveRDS(upside_2018_updated, "upside_2018_updated")
+write.csv(upside_2018_updated, file = "upside_2018_updated")
 
 
 
