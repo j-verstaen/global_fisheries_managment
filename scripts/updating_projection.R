@@ -60,6 +60,7 @@ ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf
 
 
 #Simplified Projection Data
+#this includes ITQ information
 ITQ_projection_simple <- ITQ_projection %>%
   select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "Catch", "Biomass", "BvBmsy", "FvFmsy","MSY", "Price", "g", "k", "c", "phi", "yearitq", "itq_now", "turf", "programstart")
 
@@ -67,6 +68,13 @@ ITQ_projection_simple <- ITQ_projection %>%
 #saveRDS(ITQ_projection_simple, "projection_updated.rds")
 
 
+#upside updated
+#this does not include ITQ information
+upside_2018_updated <- ITQ_projection %>%
+  select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "Catch", "Biomass", "BvBmsy", "FvFmsy","MSY", "Price", "g", "k", "c", "phi")
+
+#create RDS from dataframe
+#saveRDS(upside_2018_updated, "upside_2018_updated")
 
 
 
