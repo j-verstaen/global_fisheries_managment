@@ -427,13 +427,15 @@ Part 3
 2) Include each fishery only once (not multiple years).
 3) so then see how hard it is to collect other characteristics for each species (like growth rate or ISCAAP category).
 
+1 & 2
 ```{r}
 
 #filter out all countries that don't have itqs or turfs
 true_turf_itq_1 <- all_turf_itq %>%
   filter (iq == "TRUE" | itq == "TRUE" | ivq == "TRUE" | turf == "TRUE") %>%
   filter( Country != "NA") %>%
-  select("Country", "SciName", "iq", "itq", "ivq", "turf")
+  select("Country", "SciName", "iq", "itq", "ivq", "turf") 
+  
 
 true_turf_itq <- unique(true_turf_itq_1 [ , 1:6])
 
@@ -441,8 +443,8 @@ unique(true_turf_itq$Country)
 #33 countries
 #Chile, Fiji, Italy, Japan, Mexico, Papua New Guinea, Samoa, Solomon Islands, Spain, Sri Lanka, Sweden, Vanuatu, Vietnam, Australia, USA, Canada, Peru, Argentina, South Africa, New Zealand, American Samoa, Belize, Brazil, Ecuador, France, Greece, India, Netherlands, Nigeria, Philippines, St Lucia, United States, United Kingdom  
 
-#chile_itq_turf <- filter(only_turf_itq, Country == "Chile")
-unique(chile_itq_turf$SciName)
+#chile_itq_turf <- filter(true_turf_itq, Country == "Chile")
+#unique(chile_itq_turf$SciName)
 # 67
 
 #fiji_itq_turf <- filter(only_turf_itq, Country == "Fiji")
@@ -454,8 +456,52 @@ unique(chile_itq_turf$SciName)
 ```
 
 
+3
+ISCAAP
+```{r}
+
+iscaap_cat_1 <- upside_2018_updated %>%
+  select("SciName", "SpeciesCat") 
+
+iscaap_cat <- unique(iscaap_cat_1 [ , 1:2])
+
+true_turf_itq_iscaap_1 <- merge(true_turf_itq, iscaap_cat, by = "SciName", all = T)
+
+true_turf_itq_iscaap <- true_turf_itq_iscaap_1 %>%
+  filter( itq != "NA" & ivq != "NA" & iq != "NA" & turf != "NA") 
+
+true_turf_itq_iscaap[is.na(true_turf_itq_iscaap)] <- "NA"
+
+missing_speccat <- true_turf_itq_iscaap %>%
+  filter(SpeciesCat == "NA")
+
+determine_spec_cat <- as.vector(missing_speccat$SciName)
+determine_spec_cat
 
 
+```
+
+FishBase
+
+```{r}
+
+library("rfishbase")
+
+species <- as.vector(true_turf_itq_iscaap$SciName)
+species
+
+table_species <- species(species)
+
+#fishtest <- species_list(Genus = "Labroides")
+#fishtest
+#species(fishtest)
+#even running the practice online tutorial get this error :Error in curl::curl_fetch_memory(url, handle = handle) : Timeout was reached: Connection timed out after 10004 milliseconds
+
+#fishbase_test <- validate_names(species, fields = c("Species", ""))
+
+
+
+```
 
 
 
