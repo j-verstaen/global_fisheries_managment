@@ -286,6 +286,9 @@ Need to create new dataset (half upside half ITQ): Species, turf/itq, country,an
 ################
 ###############
 PART 2
+1) pull the ITQ, IVQ, IQ fisheries out of upside.
+2) pull the TURF fisheries from EDF.
+3) For each fishery, we want species, location, and ITQ vs. TURF.
 
 From updating_projection.R script file
 ```{r}
@@ -355,10 +358,6 @@ upside_2018_updated <- ITQ_projection %>%
 
 
 
-1) pull the ITQ, IVQ, IQ fisheries out of upside.
-2) pull the TURF fisheries from EDF.
-3) For each fishery, we want species, location, and ITQ vs. TURF.
-
 #load data
 ```{r}
 
@@ -418,6 +417,64 @@ all_turf_itq$itq_now[is.na(all_turf_itq$itq_now)] <- 0
 
 
 ```
+
+###################
+##################
+
+Part 3
+
+1) include only species that are either TURF, ITQ, IVQ, etc. (omit species that are FALSE for everything).
+2) Include each fishery only once (not multiple years).
+3) so then see how hard it is to collect other characteristics for each species (like growth rate or ISCAAP category).
+
+```{r}
+
+#filter out all countries that don't have itqs or turfs
+true_turf_itq_1 <- all_turf_itq %>%
+  filter (iq == "TRUE" | itq == "TRUE" | ivq == "TRUE" | turf == "TRUE") %>%
+  filter( Country != "NA") %>%
+  select("Country", "SciName", "iq", "itq", "ivq", "turf")
+
+true_turf_itq <- unique(true_turf_itq_1 [ , 1:6])
+
+unique(true_turf_itq$Country)
+#33 countries
+#Chile, Fiji, Italy, Japan, Mexico, Papua New Guinea, Samoa, Solomon Islands, Spain, Sri Lanka, Sweden, Vanuatu, Vietnam, Australia, USA, Canada, Peru, Argentina, South Africa, New Zealand, American Samoa, Belize, Brazil, Ecuador, France, Greece, India, Netherlands, Nigeria, Philippines, St Lucia, United States, United Kingdom  
+
+#chile_itq_turf <- filter(only_turf_itq, Country == "Chile")
+unique(chile_itq_turf$SciName)
+# 67
+
+#fiji_itq_turf <- filter(only_turf_itq, Country == "Fiji")
+#unique(fiji_itq_turf$SciName)
+
+#test_duplicate <- unique(fiji_itq_turf[ , 1:8])
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
