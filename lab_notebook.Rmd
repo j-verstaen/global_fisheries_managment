@@ -516,6 +516,17 @@ species_rightsbased <- read_csv("processed_data/species_rightsbased.csv")
 
 
 
+###########
+Regressions
+
+```{r}
+
+species_rightsbased <- read_csv("processed_data/species_rightsbased.csv")
+
+upside_2018_updated <- readRDS("/GitHub/global_fisheries_managment/processed_data/upside_2018_updated.rds")
+
+
+```
 
 
 
