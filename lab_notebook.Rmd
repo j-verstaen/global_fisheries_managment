@@ -467,7 +467,6 @@ iscaap_cat <- unique(iscaap_cat_1 [ , 1:2])
 
 true_turf_itq_iscaap_1 <- merge(true_turf_itq, iscaap_cat, by = "SciName", all = T)
 
-
 true_turf_itq_iscaap <- true_turf_itq_iscaap_1 %>%
   filter( itq != "NA" & ivq != "NA" & iq != "NA" & turf != "NA") 
 
@@ -476,7 +475,7 @@ true_turf_itq_iscaap[is.na(true_turf_itq_iscaap)] <- "NA"
 missing_speccat <- true_turf_itq_iscaap %>%
   filter(SpeciesCat == "NA")
 
-write.csv(true_turf_itq_iscaap, file = "true_turf_itq_iscaap.csv")
+#write.csv(true_turf_itq_iscaap, file = "true_turf_itq_iscaap.csv")
 
 determine_spec_cat <- as.vector(missing_speccat$SciName)
 determine_spec_cat
@@ -507,6 +506,13 @@ growth <- popgrowth(species)
 
 
 ```
+
+FAO website with fisheries data is currently unavaliable. Updated by hand for now; read in below 
+```{r}
+species_rightsbased <- read_csv("processed_data/species_rightsbased.csv")
+```
+-	used FAO 3-Alpha species codes (ASFIS) updated 2/2009
+-	ones with no ISSCAPP # still are shellfish, snails, crabs, not species specific, common name, species in NA, or a family name with more than 1 #
 
 
 
