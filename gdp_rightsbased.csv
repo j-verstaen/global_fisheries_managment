@@ -1,0 +1,291 @@
+"","Country","current_gdp","SciName","i_right","turf","SpeciesCat"
+"1","Argentina",20786.67933,"Macruronus magellanicus",1,0,32
+"2","Argentina",20786.67933,"Merluccius hubbsi",1,0,32
+"3","Argentina",20786.67933,"Micromesistius australis",1,0,32
+"4","Australia",48460.04928,"Centroberyx gerrardi",1,0,34
+"5","Australia",48460.04928,"Chrysophrys auratus",1,0,33
+"6","Australia",48460.04928,"Dissostichus eleginoides",1,0,34
+"7","Australia",48460.04928,"Genypterus blacodes",1,0,34
+"8","Australia",48460.04928,"Hoplostethus atlanticus",1,0,34
+"9","Australia",48460.04928,"Jasus edwardsii",1,0,43
+"10","Australia",48460.04928,"Macruronus novaezelandiae",1,0,32
+"11","Australia",48460.04928,"Metapenaeus endeavours",0,1,45
+"12","Australia",48460.04928,"Nemadactylus macropterus",1,0,34
+"13","Australia",48460.04928,"Neoplatycephalus richardsoni",1,0,33
+"14","Australia",48460.04928,"Penaeus esculentus",0,1,45
+"15","Australia",48460.04928,"Penaeus latisulcatus",0,1,45
+"16","Australia",48460.04928,"Penaeus merguiensis",0,1,45
+"17","Australia",48460.04928,"Platycephalus conatus",1,0,33
+"18","Australia",48460.04928,"Pseudocarcinus gigas",1,0,42
+"19","Australia",48460.04928,"Rexea solandri",1,0,34
+"20","Australia",48460.04928,"Seriolella brama",1,0,34
+"21","Australia",48460.04928,"Seriolella punctata",1,0,34
+"22","Australia",48460.04928,"Sillago flindersi",1,0,33
+"23","Australia",48460.04928,"Trachypenaeus sp",0,1,45
+"24","Belize",8590.013256,"Panulirus argus",0,1,43
+"25","Belize",8590.013256,"Panulirus spp",0,1,43
+"26","Canada",46704.89472,"Chionoecetes opilio",0,1,42
+"27","Canada",46704.89472,"Sebastes pinniger",1,0,34
+"28","Chile",24634.97021,"Adelomelon ancilla",0,1,58
+"29","Chile",24634.97021,"Argobuccinum argus",0,1,52
+"30","Chile",24634.97021,"Argobuccinum spp",0,1,52
+"31","Chile",24634.97021,"Argopecten purpuratus",0,1,55
+"32","Chile",24634.97021,"Athyionidium chilensis",0,1,77
+"33","Chile",24634.97021,"Aulacomya ater",0,1,54
+"34","Chile",24634.97021,"Austromegabalanus psittacus",0,1,47
+"35","Chile",24634.97021,"Brama australis",0,1,37
+"36","Chile",24634.97021,"Calyptraea trochiformis",0,1,58
+"37","Chile",24634.97021,"Cancer coronatus",0,1,42
+"38","Chile",24634.97021,"Cancer setosus",0,1,42
+"39","Chile",24634.97021,"Chlamys vitrea",0,1,55
+"40","Chile",24634.97021,"Chondracanthus chamissoi",0,1,92
+"41","Chile",24634.97021,"Choromytilus chorus",0,1,54
+"42","Chile",24634.97021,"Chorus giganteus",0,1,52
+"43","Chile",24634.97021,"Concholepas concholepas",0,1,52
+"44","Chile",24634.97021,"Ensis macha",0,1,56
+"45","Chile",24634.97021,"Enteroctopus megalocyathus",0,1,57
+"46","Chile",24634.97021,"Fissurella bridgesii",0,1,58
+"47","Chile",24634.97021,"Fissurella costata",0,1,58
+"48","Chile",24634.97021,"Fissurella cumingi",0,1,58
+"49","Chile",24634.97021,"Fissurella latimarginata",0,1,58
+"50","Chile",24634.97021,"Fissurella maxima",0,1,58
+"51","Chile",24634.97021,"Fissurella nigra",0,1,58
+"52","Chile",24634.97021,"Fissurella picta",0,1,58
+"53","Chile",24634.97021,"Fissurella pulchra",0,1,58
+"54","Chile",24634.97021,"Fissurella spp",0,1,58
+"55","Chile",24634.97021,"Gari solida",0,1,56
+"56","Chile",24634.97021,"Gigartina skottsbergii",0,1,92
+"57","Chile",24634.97021,"Gracilaria chilensis",0,1,92
+"58","Chile",24634.97021,"Haliotis rufescens",0,1,52
+"59","Chile",24634.97021,"Homalaspis plana",0,1,42
+"60","Chile",24634.97021,"Lithodes antarctica",0,1,42
+"61","Chile",24634.97021,"Loxechinus albus",0,1,76
+"62","Chile",24634.97021,"Macrocystis integrifolia",0,1,91
+"63","Chile",24634.97021,"Mesodesma donacium",0,1,56
+"64","Chile",24634.97021,"Mulinia edulis",0,1,56
+"65","Chile",24634.97021,"Mulinia spp",0,1,56
+"66","Chile",24634.97021,"Mytilus chilensis",0,1,54
+"67","Chile",24634.97021,"Normanichthys crockeri",0,1,33
+"68","Chile",24634.97021,"Octopus mimus",0,1,57
+"69","Chile",24634.97021,"Odontocymbiola magallanica",0,1,58
+"70","Chile",24634.97021,"Opisthonema oglinum",0,1,35
+"71","Chile",24634.97021,"Paralomis granulosa",0,1,44
+"72","Chile",24634.97021,"Pattalus mollis",0,1,77
+"73","Chile",24634.97021,"Pecten maximus",0,1,55
+"74","Chile",24634.97021,"Perna perna",0,1,54
+"75","Chile",24634.97021,"Protothaca thaca",0,1,56
+"76","Chile",24634.97021,"Pyura chilensis",0,1,74
+"77","Chile",24634.97021,"Sarcothalia crispata",0,1,92
+"78","Chile",24634.97021,"Scomber japonicus",0,1,37
+"79","Chile",24634.97021,"Sea squirt",0,1,74
+"80","Chile",24634.97021,"Semele solida",0,1,56
+"81","Chile",24634.97021,"Sepia bertheloti",0,1,57
+"82","Chile",24634.97021,"Sprattus fuegensis",0,1,35
+"83","Chile",24634.97021,"Tagelus dombeii",0,1,56
+"84","Chile",24634.97021,"Tegula atra",0,1,58
+"85","Chile",24634.97021,"Thais chocolata",0,1,52
+"86","Chile",24634.97021,"Trophon spp",0,1,58
+"87","Chile",24634.97021,"Venus antiqua",0,1,56
+"88","Chile",24634.97021,"Xanthochorus cassidiformis",0,1,58
+"89","Ecuador",11617.42885,"Anadara similis",0,1,56
+"90","Ecuador",11617.42885,"Anadara tuberculos",0,1,56
+"91","Spain",37997.85234,"Maja squinado",0,1,42
+"92","Spain",37997.85234,"Necora puber",0,1,42
+"93","Spain",37997.85234,"Octopus vulgaris",0,1,57
+"94","Spain",37997.85234,"Palaemon serratus",0,1,45
+"95","Spain",37997.85234,"Paracentrotus lividus",0,1,76
+"96","Spain",37997.85234,"Pollicipes pollicipes",0,1,47
+"97","Fiji",9554.602534,"Anadara antiquat",0,1,56
+"98","Fiji",9554.602534,"Cypraea tigris",0,1,58
+"99","Fiji",9554.602534,"Holothurian",0,1,58
+"100","Fiji",9554.602534,"Lambis lambis",0,1,52
+"101","Fiji",9554.602534,"Lenthrinus harak",0,1,33
+"102","Fiji",9554.602534,"Lethrinus atsinkoni",0,1,33
+"103","Fiji",9554.602534,"Penaeus indicus",0,1,45
+"104","Fiji",9554.602534,"Tripneustes gratilla",0,1,76
+"105","France",42850.38628,"Conger conger",0,1,34
+"106","France",42850.38628,"Dentex dentex",0,1,33
+"107","France",42850.38628,"Dicentrarchus labrax",0,1,33
+"108","France",42850.38628,"Diplodus spp",0,1,33
+"109","France",42850.38628,"Merluccius merluccius",0,1,32
+"110","France",42850.38628,"Mugilidae spp.",0,1,33
+"111","France",42850.38628,"Mullus barbatus",0,1,33
+"112","France",42850.38628,"Mullus surmuletus",0,1,33
+"113","France",42850.38628,"Pagellus spp",0,1,33
+"114","France",42850.38628,"Pagrus pagrus",0,1,33
+"115","France",42850.38628,"Palinurus elephas",0,1,43
+"116","France",42850.38628,"Sarpa salpa",0,1,33
+"117","France",42850.38628,"Scorpaena notata",0,1,34
+"118","France",42850.38628,"Scorpaena porcus",0,1,34
+"119","France",42850.38628,"Scorpaena scrofa",0,1,34
+"120","France",42850.38628,"Scorpaena spp",0,1,34
+"121","France",42850.38628,"Sepia officinalis",0,1,57
+"122","France",42850.38628,"Serranus cabrilla",0,1,33
+"123","France",42850.38628,"Serranus scriba",0,1,33
+"124","France",42850.38628,"Serranus spp.",0,1,33
+"125","France",42850.38628,"Solea aegyptiaca",0,1,31
+"126","France",42850.38628,"Solea solea",0,1,31
+"127","France",42850.38628,"Sparus aurata",0,1,33
+"128","France",42850.38628,"Spondyliosoma cantharus",0,1,33
+"129","France",42850.38628,"Symphodus spp",0,1,33
+"130","France",42850.38628,"Trachinus spp.",0,1,33
+"131","France",42850.38628,"Uranoscopus scaber",0,1,34
+"132","United Kingdom",43268.78356,"Crassostrea gigas",0,1,53
+"133","United Kingdom",43268.78356,"Mytilus edulis",0,1,54
+"134","United Kingdom",43268.78356,"Ostrea edulis",0,1,53
+"135","United Kingdom",43268.78356,"Oyster spp",0,1,53
+"136","United Kingdom",43268.78356,"Scallop spp",0,1,55
+"137","Greece",27601.90492,"Anguilla anguilla",0,1,22
+"138","Greece",27601.90492,"Dicentrarchus labrax",0,1,33
+"139","Greece",27601.90492,"Liza aurata",0,1,33
+"140","Greece",27601.90492,"Liza ramada",0,1,33
+"141","Greece",27601.90492,"Liza saliens",0,1,33
+"142","Greece",27601.90492,"Mugil cephalus",0,1,33
+"143","Greece",27601.90492,"Sparus aurata",0,1,33
+"144","India",7055.55483,"Metapenaeus dobsoni",0,1,45
+"145","India",7055.55483,"Metapenaeus monoceros",0,1,45
+"146","India",7055.55483,"Penaeus indicus",0,1,45
+"147","India",7055.55483,"Penaeus indicus",0,1,45
+"148","India",7055.55483,"Penaeus monodon",0,1,45
+"149","Italy",39426.9408,"Callista chione",0,1,56
+"150","Italy",39426.9408,"Chamelea gallina",0,1,56
+"151","Italy",39426.9408,"Donax trunculus",0,1,56
+"152","Italy",39426.9408,"Ensis minor",0,1,57
+"153","Italy",39426.9408,"Tapes decussatus",0,1,56
+"154","Italy",39426.9408,"Venerupis aurea",0,1,56
+"155","Italy",39426.9408,"Venus verrucosa",0,1,56
+"156","Japan",43278.98933,"Ammodytes personatus",0,1,33
+"157","Japan",43278.98933,"Arctoscopus japonicus",0,1,34
+"158","Japan",43278.98933,"Chionoecetes japonicus",0,1,42
+"159","Japan",43278.98933,"Clam spp",0,1,56
+"160","Japan",43278.98933,"Cololabis saira",0,1,37
+"161","Japan",43278.98933,"Haliotis discus",0,1,52
+"162","Japan",43278.98933,"Haliotis ruber",0,1,52
+"163","Japan",43278.98933,"Haliotis spp",0,1,52
+"164","Japan",43278.98933,"Meretrix lusoria",0,1,56
+"165","Japan",43278.98933,"Pseudocardium sachalinense",0,1,56
+"166","Japan",43278.98933,"Sandeel",0,1,33
+"167","Japan",43278.98933,"Sardinops melanostictus",0,1,35
+"168","Japan",43278.98933,"Scomber japonicus",0,1,37
+"169","Japan",43278.98933,"Sea cucumbers",0,1,77
+"170","Japan",43278.98933,"Sergia lucens",0,1,45
+"171","Japan",43278.98933,"Seriola quinqueradiata",0,1,37
+"172","Japan",43278.98933,"Theragra chalcogramma",0,1,32
+"173","Japan",43278.98933,"Todarodes pacificus",0,1,57
+"174","Japan",43278.98933,"Trachurus japonicus",0,1,37
+"175","Sri Lanka",12810.95091,"Metapenaeus dobsoni",0,1,45
+"176","Sri Lanka",12810.95091,"Metapenaeus moyebi",0,1,45
+"177","Sri Lanka",12810.95091,"Penaeus indicus",0,1,45
+"178","Sri Lanka",12810.95091,"Penaeus semisulcatus",0,1,45
+"179","Mexico",18258.09621,"Astraea turbanica",0,1,58
+"180","Mexico",18258.09621,"Astraea undosa",0,1,58
+"181","Mexico",18258.09621,"Atrina tuberculosa",0,1,55
+"182","Mexico",18258.09621,"Balistes polylepis",0,1,33
+"183","Mexico",18258.09621,"Callinectes bellicosus",0,1,42
+"184","Mexico",18258.09621,"Haliotis corrugata",0,1,52
+"185","Mexico",18258.09621,"Haliotis fulgens",0,1,52
+"186","Mexico",18258.09621,"Mycteroperca rosacea",0,1,33
+"187","Mexico",18258.09621,"Panopea globosa",0,1,58
+"188","Mexico",18258.09621,"Panulirus argus",0,1,43
+"189","Mexico",18258.09621,"Panulirus interruptus",0,1,43
+"190","Mexico",18258.09621,"Paralabrax maculatofasciatus_",0,1,33
+"191","Mexico",18258.09621,"Pinna rugosa",0,1,55
+"192","Mexico",18258.09621,"Spondylus calcifer",0,1,53
+"193","Netherlands",52503.26827,"Anchovies spp",0,1,35
+"194","Netherlands",52503.26827,"Clam spp",0,1,56
+"195","Netherlands",52503.26827,"Japanese oysters",0,1,53
+"196","Netherlands",52503.26827,"Mackerel",0,1,37
+"197","Netherlands",52503.26827,"Mullet spp",0,1,33
+"198","Netherlands",52503.26827,"Razor clams",0,1,56
+"199","Netherlands",52503.26827,"Sea bass spp",0,1,33
+"200","Netherlands",52503.26827,"Smelt spp",0,1,33
+"201","Netherlands",52503.26827,"Sprat spp",0,1,33
+"202","New Zealand",41109.00768,"Allocyttus niger",1,0,34
+"203","New Zealand",41109.00768,"Chrysophrys auratus",1,0,33
+"204","New Zealand",41109.00768,"Epigonus telescopus",1,0,34
+"205","New Zealand",41109.00768,"Genypterus blacodes",1,0,34
+"206","New Zealand",41109.00768,"Hyperoglyphe antarctica",1,0,34
+"207","New Zealand",41109.00768,"Jasus edwardsii",1,0,43
+"208","New Zealand",41109.00768,"Kathetostoma giganteum",1,0,34
+"209","New Zealand",41109.00768,"Nemadactylus macropterus",1,0,34
+"210","New Zealand",41109.00768,"Pseudocyttus maculatus",1,0,34
+"211","New Zealand",41109.00768,"Rexea solandri",1,0,34
+"212","Peru",13434.1256,"Engraulis ringens",1,0,35
+"213","Philippines",8342.804479,"Anodontostoma chacunda",0,1,24
+"214","Philippines",8342.804479,"Atherinidae",0,1,37
+"215","Philippines",8342.804479,"Centropomidae",0,1,33
+"216","Philippines",8342.804479,"Latidae",0,1,13
+"217","Philippines",8342.804479,"Lutjanid spp",0,1,33
+"218","Philippines",8342.804479,"Pomacentridae",0,1,33
+"219","Philippines",8342.804479,"Serranid spp",0,1,33
+"220","Sweden",50208.16476,"Pandalus borealis",0,1,45
+"221","United States",59531.66196,"Anoplopoma fimbria",1,0,34
+"222","United States",59531.66196,"Callinectes sapidus",0,1,42
+"223","United States",59531.66196,"Chionoecetes bairdi",1,0,42
+"224","United States",59531.66196,"Chionoecetes opilio",1,0,42
+"225","United States",59531.66196,"Clam spp",0,1,56
+"226","United States",59531.66196,"Eopsetta jordani",1,0,31
+"227","United States",59531.66196,"Epinephelus flavolimbatus",1,0,33
+"228","United States",59531.66196,"Epinephelus morio",1,0,33
+"229","United States",59531.66196,"Gadus macrocephalus",1,0,32
+"230","United States",59531.66196,"Hippoglossoides elassodon",1,0,31
+"231","United States",59531.66196,"Lepidopsetta polyxystra",1,0,31
+"232","United States",59531.66196,"Limanda aspera",1,0,31
+"233","United States",59531.66196,"Lopholatilus chamaeleonticeps",1,0,34
+"234","United States",59531.66196,"Metacarcinus magister",0,1,42
+"235","United States",59531.66196,"Microstomus pacificus",1,0,31
+"236","United States",59531.66196,"Mycteroperca bonaci",1,0,33
+"237","United States",59531.66196,"Mycteroperca microlepis",1,0,33
+"238","United States",59531.66196,"Oncorhynchus gorbuscha",0,1,23
+"239","United States",59531.66196,"Oncorhynchus keta",0,1,23
+"240","United States",59531.66196,"Oncorhynchus kisutch",0,1,23
+"241","United States",59531.66196,"Oncorhynchus mykiss",0,1,23
+"242","United States",59531.66196,"Oncorhynchus nerka",0,1,23
+"243","United States",59531.66196,"Oncorhynchus tshawytscha",0,1,23
+"244","United States",59531.66196,"Ophiodon elongatus",1,0,33
+"245","United States",59531.66196,"Oyster spp",0,1,53
+"246","United States",59531.66196,"Panopea generosa",0,1,56
+"247","United States",59531.66196,"Paralichthys dentatus",1,0,31
+"248","United States",59531.66196,"Paralithodes camtschaticus",1,0,44
+"249","United States",59531.66196,"Parophrys vetulus",1,0,31
+"250","United States",59531.66196,"Platichthys stellatus",1,0,31
+"251","United States",59531.66196,"Pleurogrammus monopterygius",1,0,33
+"252","United States",59531.66196,"Reinhardtius stomias",1,0,31
+"253","United States",59531.66196,"Sebastes alutus",1,0,34
+"254","United States",59531.66196,"Sebastes chlorostictus",1,0,34
+"255","United States",59531.66196,"Sebastes crameri",1,0,34
+"256","United States",59531.66196,"Sebastes diploproa",1,0,34
+"257","United States",59531.66196,"Sebastes elongatus",1,0,34
+"258","United States",59531.66196,"Sebastes entomelas",1,0,34
+"259","United States",59531.66196,"Sebastes flavidus",1,0,34
+"260","United States",59531.66196,"Sebastes goodei",1,0,34
+"261","United States",59531.66196,"Sebastes jordani",1,0,34
+"262","United States",59531.66196,"Sebastes levis",1,0,34
+"263","United States",59531.66196,"Sebastes melanostomus",1,0,34
+"264","United States",59531.66196,"Sebastes paucispinis",1,0,34
+"265","United States",59531.66196,"Sebastes pinniger",1,0,34
+"266","United States",59531.66196,"Sebastes ruberrimus",1,0,34
+"267","United States",59531.66196,"Sebastes rufus",1,0,34
+"268","United States",59531.66196,"Sebastolobus alascanus",1,0,34
+"269","United States",59531.66196,"Sebastolobus altivelis",1,0,34
+"270","United States",59531.66196,"Spisula solidissima",1,0,56
+"271","Vietnam",6775.832191,"Gerres filamentosus",0,1,33
+"272","Vietnam",6775.832191,"Glossogobius giuris",0,1,13
+"273","Vietnam",6775.832191,"Meretrix lyrata",0,1,56
+"274","Vietnam",6775.832191,"Metapenaeus ensis",0,1,45
+"275","Vietnam",6775.832191,"Penaeus monodon",0,1,45
+"276","Vietnam",6775.832191,"Penaeus semisulcatus",0,1,45
+"277","Vietnam",6775.832191,"Portunus pelagicus",0,1,42
+"278","Vietnam",6775.832191,"Portunus sanguinolentus",0,1,42
+"279","Vietnam",6775.832191,"Scylla serrata",0,1,42
+"280","Vietnam",6775.832191,"Siganus spp",0,1,33
+"281","Vietnam",6775.832191,"Terapon theraps",0,1,33
+"282","Vanuatu",3207.831231,"Birgus latro",0,1,44
+"283","Vanuatu",3207.831231,"Clam spp",0,1,56
+"284","Vanuatu",3207.831231,"Octopus spp",0,1,57
+"285","Vanuatu",3207.831231,"Papustyla pulcherrima",0,1,58
+"286","Vanuatu",3207.831231,"Reef fish",0,1,33
+"287","Vanuatu",3207.831231,"Sea cucumber",0,1,77
+"288","Vanuatu",3207.831231,"Shellfish spp",0,1,58
+"289","Vanuatu",3207.831231,"Trochus spp",0,1,58
+"290","South Africa",13497.9878,"Trachurus capensis",1,0,37
