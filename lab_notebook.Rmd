@@ -517,8 +517,9 @@ species_rightsbased <- read_csv("processed_data/species_rightsbased.csv")
 
 
 ###########
-11/26/2018
 
+Part 4:
+For TURF/ITQ data, add GDP/capita for each country, also do ISCAAP categories. Combine all ITQ,IQ etc. Run logit of Prob(ITQ) = f(ISCAAP, GDP).
 ```{r}
 
 species_rightsbased <- read_csv("data/species_rightsbased_binary.csv")
@@ -529,10 +530,6 @@ gdp_all <- read_csv("/GitHub/global_fisheries_managment/data/gpd.csv")
 
 
 ```
-
-
-Part 4:
-For TURF/ITQ data, add GDP/capita for each country, also do ISCAAP categories. Combine all ITQ,IQ etc. Run logit of Prob(ITQ) = f(ISCAAP, GDP).
 
 
 ```{r}
@@ -549,18 +546,46 @@ gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
 
 ```{r}
 
-as_factor <- gdp_rightsbased$i_right
-as_factor <- gdp_rightsbased$turf
+#gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
 
-itq_glm <- glm(i_right ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
+itq_glm <- glm(formula = i_right ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
 itq_glm
 
-turf_glm <- glm(turf ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
-turf_glm
+#turf_glm <- glm(turf ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
+#turf_glm
 
 
 ```
 
+Part 5:
+RAM only: F/Fmsy vs. B/Bmsy for all fisheries. Color ITQ differently. 
+
+```{r}
+
+ITQ_projection <- readRDS("processed_data//not_actively_used/ITQ_projection.rds")
+
+f_b_itq <- ITQ_projection %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA")
+
+#write.csv(f_b_itq, file = "f_b_itq.csv")
+f_b_irights <- read_csv("data/f_b_irights.csv")
+
+
+F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_rights ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(-1, 22)+
+  xlim(-.3, 3)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))
+
+#F_B_graph
+ggplotly(F_B_graph)
+
+```
 
 
 
