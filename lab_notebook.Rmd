@@ -553,9 +553,11 @@ gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
 itq_glm <- glm(formula = i_right ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
 itq_glm
 
+summary(itq_glm)
+
 #turf_glm <- glm(turf ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
 #turf_glm
-
+#summary(turf_glm)
 
 ```
 
