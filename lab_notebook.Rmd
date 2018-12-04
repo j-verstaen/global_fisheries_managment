@@ -540,6 +540,8 @@ join_gdp_rightsbased <- join(gdp, species_rightsbased, by = c("Country"), type =
 
 gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
 
+#write.csv(gdp_rightsbased, file = "gdp_rightsbased.csv")
+
 
 ```
 
@@ -586,6 +588,37 @@ F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_right
 ggplotly(F_B_graph)
 
 ```
+
+
+######
+MPA data wrangling
+######
+```{r}
+
+ISO_country_codes <- read_excel("data/ISO_country_codes.xlsx")
+MPA <- readRDS("data/WDPA_Nov2018.rds")
+
+mpa_simple <- MPA %>%
+  select("NAME", "PA_DEF", "DESIG_ENG", "DESIG_TYPE", "IUCN_CAT", "MARINE", "REP_M_AREA", "NO_TAKE", "STATUS", "PARENT_ISO3") %>%
+  filter(MARINE != "0")
+
+colnames(mpa_simple) <- c("NAME", "PA_DEF", "DESIG_ENG", "DESIG_TYPE", "IUCN_CAT", "MARINE", "REP_M_AREA", "NO_TAKE", "STATUS", "code")
+
+mpa_join <- join(mpa_simple, ISO_country_codes, by = c("code"), type = "full")
+
+mpa_updated <- mpa_join %>%
+  select("Country", "NAME", "DESIG_ENG", "DESIG_TYPE", "IUCN_CAT", "MARINE", "REP_M_AREA", "NO_TAKE", "STATUS" ) %>%
+  filter(NAME != "NA" & DESIG_ENG != "NA" & DESIG_TYPE != "NA" & IUCN_CAT != "NA" & MARINE != "NA" & REP_M_AREA != "NA" & NO_TAKE != "NA" & STATUS != "NA")
+
+write.csv(mpa_updated, file = "mpa_updated.csv")
+
+```
+
+PA_DEF: Allowed values: 1 (meets IUCN and/or CBD PA definition); 0 (does not meet IUCN and/or CBD PA definition (currently stored outside WDPA)).
+
+MARINE: Allowed values: 0 (100% Terrestrial PA), 1 (Coastal: marine and terrestrial PA), and 2 (100 % marine PA).
+
+
 
 
 
