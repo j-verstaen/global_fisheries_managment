@@ -145,7 +145,7 @@ match_project_ram <- match(projection_data, ram)
 
 #seperate out IdOrig column for Projection Data
 separate_projection <- projection_ram %>% separate(IdOrig, c("agency", "stock", "t0", "tf", "data_enterer"))
-    ###unsure what the last column actually is, double check
+  
 
 head(separate_projection, 10)
 
@@ -337,7 +337,7 @@ ITQ_projection_merge <- merge(unite_projection, countries_ITQ_simple, by = c("as
 ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf, data_enterer, sep = "-")
 
 #create RDS from dataframe
-#saveRDS(ITQ_projection, "ITQ_projection")
+saveRDS(ITQ_projection, "ITQ_projection.rds")
 
 
 #simplified projection data
@@ -548,7 +548,10 @@ gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
 
 ```{r}
 
-#gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
+
+##make sure that these stats are not effected by year 2012 onward not having info on itq or not. i think this data was not year specific so it should be fine? but look at the data 
+
+gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
 
 itq_glm <- glm(formula = i_right ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
 itq_glm
@@ -568,6 +571,7 @@ RAM only: F/Fmsy vs. B/Bmsy for all fisheries. Color ITQ differently.
 
 ITQ_projection <- readRDS("processed_data//not_actively_used/ITQ_projection.rds")
 
+
 f_b_itq <- ITQ_projection %>%
   select("BvBmsy", "FvFmsy", "itq", "iq", "ivq") %>%
   filter( itq != "NA", iq != "NA", ivq != "NA")
@@ -575,8 +579,8 @@ f_b_itq <- ITQ_projection %>%
 #write.csv(f_b_itq, file = "f_b_itq.csv")
 f_b_irights <- read_csv("data/f_b_irights.csv")
 
-
-F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_rights ))+
+# get data frame that was
+F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_rights, size = catch ))+
   geom_point()+
   labs(x = "B/Bmsy", y= "F/Fsmy") +
   theme_minimal()+
@@ -612,7 +616,7 @@ mpa_updated <- mpa_join %>%
   select("Country", "NAME", "DESIG_ENG", "DESIG_TYPE", "IUCN_CAT", "MARINE", "REP_M_AREA", "NO_TAKE", "STATUS" ) %>%
   filter(NAME != "NA" & DESIG_ENG != "NA" & DESIG_TYPE != "NA" & IUCN_CAT != "NA" & MARINE != "NA" & REP_M_AREA != "NA" & NO_TAKE != "NA" & STATUS != "NA")
 
-write.csv(mpa_updated, file = "mpa_updated.csv")
+#write.csv(mpa_updated, file = "mpa_updated.csv")
 
 ```
 
@@ -620,20 +624,117 @@ PA_DEF: Allowed values: 1 (meets IUCN and/or CBD PA definition); 0 (does not mee
 
 MARINE: Allowed values: 0 (100% Terrestrial PA), 1 (Coastal: marine and terrestrial PA), and 2 (100 % marine PA).
 
+#############
+############
+1.	From upside want to know the catch in ITQ versus non ITQ for most recent year
+
+- issues: unsure what year real data ends and projectio/modeling begins
+- pretty sure its 2016. there are thee fisheries with 2017 data in the updated RAMS dataset but more for 2016
+
+update recent years fisheries
+
+
+issue: the projection data updated with RAMs doens't have ITQ data associated with the countries
+- need a list of all the countries and whether or not they have ITQ in 2016 -> this can be pulled from Corbett's data. need to check if his data is from that year
+
+
+```{r}
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+#filter down the data to create a data set of countries that have ITQs so I can add that to the rams data. upside has this info but not the updated part
+
+#2012 is the most updated version of the upside data. used this to figure out which counties have ITQs and will make a data frame from that of a list of countires that have itqs and then update the final datafram (or inital rams dataframe)
+countries_with_ITQ <- ITQ_projection %>%
+  select (Country, itq, iq, ivq, Year, IdOrig) %>%
+  filter(Year == "2012") 
+
+countries_with_ITQ_2 <- unique(countries_with_ITQ[, 1:6])
+countries_with_ITQ_3 <- filter(countries_with_ITQ_2, itq != "NA" | iq != "NA" | ivq != "NA")
+
+countries_with_ITQ_3$rightsbased <- 1
+countries_itq_2012 <- select(countries_with_ITQ_3, Country, IdOrig, rightsbased)
+
+#now need to create new column thats rights based fishereise 0 o for projection 2016
+
+ITQ_projection_2016 <- ITQ_projection %>%
+  filter(Year == "2016") %>%
+  select(IdOrig, Country, Catch)
+
+itq_2016_updated <- join(ITQ_projection_2016, countries_itq_2012, by= c("IdOrig", "Country"), type= "full")
+
+itq_2016_updated$rightsbased[is.na(itq_2016_updated$rightsbased)] <- 0
+
+#seperate rights based and not
+itq_2016_rightsbasedTRUE <- filter(itq_2016_updated, rightsbased == "1")
+
+itq_2016_rightsbasedFALSE <- filter(itq_2016_updated, rightsbased == "0")
+
+sum(itq_2016_rightsbasedTRUE$Catch, na.rm = TRUE)
+#27,830,933
+sum(itq_2016_rightsbasedFALSE$Catch, na.rm = TRUE)
+#266,328,075
+
+##units???
+
+
+```
+
+
+In the updated ITQ projection data there are lines of data that have 2012 with NA instead of TRUE/FALSE for itq. 
+
+#data we have says that Mexico does not have ITQs?
+in 2012 only ones it says we have are Australia, USA, Canda, Japan, Peru, Argentina, South Africa, New Zealand
+
+Fixing upsie data
+- take ITQ projection an filter it down to idorig, year, BvBmsy", "FvFmsy", "itq", "iq", "ivq"
+- filter out just ones with itqs, create a column thats rights based fisherse and make it one
+- filter out specifics of itq
+- merge/join that data with the countries_itq2012 with country, idorig, and rihgts based
+- make nas zero
+-redo kobe plot with this data
+- also cut off at 5
 
 
 
+```{r}
+
+ITQ_projection <- readRDS("processed_data//not_actively_used/ITQ_projection.rds")
+
+countries_with_ITQ <- ITQ_projection %>%
+  select (Country, itq, iq, ivq, Year, IdOrig) %>%
+  filter(Year == "2012") 
+
+countries_with_ITQ_2 <- unique(countries_with_ITQ[, 1:6])
+countries_with_ITQ_3 <- filter(countries_with_ITQ_2, itq != "NA" | iq != "NA" | ivq != "NA")
+
+countries_with_ITQ_3$rightsbased <- 1
+countries_itq_2012 <- select(countries_with_ITQ_3, Country, IdOrig, rightsbased)
+
+##need to update projection data
 
 
+f_b_itq <- ITQ_projection %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA")
 
+#write.csv(f_b_itq, file = "f_b_itq.csv")
+f_b_irights <- read_csv("data/f_b_irights.csv")
 
+# get data frame that was
+F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_rights, size = catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(-1, 22)+
+  xlim(-.3, 3)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))
 
+#F_B_graph
+ggplotly(F_B_graph)
 
-
-
-
-
-
+```
 
 
 

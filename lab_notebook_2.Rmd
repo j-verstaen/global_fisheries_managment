@@ -1,0 +1,61 @@
+---
+title: "lab_notebook_2"
+author: "Juliette Verstaen"
+date: "12/7/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Loading packages
+```{r}
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(tidyr)
+  library(here)
+  library(ggplot2)
+  library(dplyr)
+  library(readxl)
+  library(devtools)
+  library(plotly)
+  library(base)
+  library(rio)
+  library(plyr)
+})
+
+```
+
+
+
+#Load Data
+```{r}
+
+#Corbet data: when countries began using RBFs
+countries_ITQ <- read_excel("data/Countries_ITQ.xlsx")
+
+#Upside data
+projection_data <- readRDS("data/projection_data.rds")
+
+#MPA data
+MPA <- readRDS("data/WDPA_Nov2018.rds")
+
+#RAMS
+load("data/DBdata-model_fits_included.RData")
+
+#number_species <- unique(stock$scientificname)
+#341 different species
+
+#cooperative data from "Conservation incentives and collective choices in cooperative fisheries" paper (Ovando et al 2013)
+jc_coop <- read_csv("data/clean_cooperatives_data.csv")
+
+#EDF turf data
+edf_turf <- read_excel("data/EDF_TURF_data.xlsx")
+
+```
+
+
+
