@@ -567,25 +567,35 @@ summary(itq_glm)
 Part 5:
 RAM only: F/Fmsy vs. B/Bmsy for all fisheries. Color ITQ differently. 
 
+2. From upside sorts KOBE: ITQ versus non ITQ and the size of dot is the catch
+#this is all the data we have, make the same ones with only certain years and such
+
 ```{r}
 
 ITQ_projection <- readRDS("processed_data//not_actively_used/ITQ_projection.rds")
 
 
 f_b_itq <- ITQ_projection %>%
-  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq") %>%
-  filter( itq != "NA", iq != "NA", ivq != "NA")
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"))
 
+#turf == TRUE ~ "2",
 #write.csv(f_b_itq, file = "f_b_itq.csv")
-f_b_irights <- read_csv("data/f_b_irights.csv")
+#f_b_irights <- read_csv("data/f_b_irights.csv")
+#this was when i couldn't figure out how to do the if then statement in R
+
+#F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_rights, size = catch ))+
 
 # get data frame that was
-F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_rights, size = catch ))+
+F_B_graph <- ggplot(data = f_b_itq, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
   geom_point()+
   labs(x = "B/Bmsy", y= "F/Fsmy") +
   theme_minimal()+
   theme(legend.title=element_blank())+
-  ylim(-1, 22)+
+  ylim(-1, 5)+
   xlim(-.3, 3)+
   geom_hline(aes(yintercept=1))+
   geom_vline(aes(xintercept=1))
@@ -594,6 +604,13 @@ F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_right
 ggplotly(F_B_graph)
 
 ```
+
+
+
+
+
+
+
 
 
 ######
@@ -633,10 +650,112 @@ MARINE: Allowed values: 0 (100% Terrestrial PA), 1 (Coastal: marine and terrestr
 
 update recent years fisheries
 
-
 issue: the projection data updated with RAMs doens't have ITQ data associated with the countries
 - need a list of all the countries and whether or not they have ITQ in 2016 -> this can be pulled from Corbett's data. need to check if his data is from that year
 
+1.	From upside want to know the catch in ITQ versus non ITQ for most recent year
+corbet data only goes up until 2012 
+```{r}
+
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+f_b_itq_countries <- ITQ_projection %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch", "Year", "Country", "IdOrig") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+countries_itq_2012 <- f_b_itq_countries %>%
+  select (Country, rightsbased, Year, IdOrig, Catch) %>%
+  filter(Year == "2012") 
+
+ITQ_projection_2016 <- ITQ_projection %>%
+  filter(Year == "2016") %>%
+  select(IdOrig, Country)
+
+itq_2016_updated <- join(ITQ_projection_2016, countries_itq_2012, by= c("IdOrig", "Country"), type= "full")
+
+itq_2016_rightsbasedTRUE <- filter(itq_2016_updated, rightsbased == "1")
+
+itq_2016_rightsbasedFALSE <- filter(itq_2016_updated, rightsbased == "0")
+
+itq_2016_rightsbasedTURF <- filter(itq_2016_updated, rightsbased == "2")
+
+
+sum(itq_2016_rightsbasedTRUE$Catch, na.rm = TRUE)
+#27,830,933
+sum(itq_2016_rightsbasedFALSE$Catch, na.rm = TRUE)
+#266,328,075
+
+sum(itq_2016_rightsbasedTURF$Catch, na.rm = TRUE)
+#1505000
+
+```
+
+updating projection datapast 2012  with the 2012 itq fisheries
+```{r}
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+f_b_itq_countries <- ITQ_projection %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch", "Year", "Country", "IdOrig") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+countries_itq_2012 <- f_b_itq_countries %>%
+  select (Country, rightsbased, Year, IdOrig, Catch) %>%
+  filter(Year == "2012") 
+
+ITQ_projection_past2012 <- ITQ_projection %>%
+  filter(Year > 2012) 
+
+ITQ_projection_past2012UPDATED <- join(ITQ_projection_past2012, countries_itq_2012, by = c("Country", "Year", "IdOrig"), type = "full" )
+
+ITQ_projection_pre2012 <- ITQ_projection %>%
+  filter(Year <= 2012)
+
+ITQ_projection_updated <- join(ITQ_projection_past2012UPDATED,ITQ_projection_pre2012, by = c("Country", "Year", "IdOrig"), type = "full")
+
+#saveRDS(ITQ_projection_updated, "ITQ_projection_updated.rds")
+
+ITQ_projection_updated <- readRDS("data/ITQ_projection_updated.rds")
+
+
+
+f_b_itq_updated <- ITQ_projection_updated %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"))
+
+
+F_B_graph_updated <- ggplot(data = f_b_itq_updated, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(-1, 5)+
+  xlim(-.3, 3)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))
+
+#F_B_graph
+ggplotly(F_B_graph_updated)
+
+```
+
+
+
+
+
+
+
+###Did this chunck before figured out how to do if/then statements in r
 
 ```{r}
 ITQ_projection <- readRDS("data/ITQ_projection.rds")
@@ -685,7 +804,7 @@ In the updated ITQ projection data there are lines of data that have 2012 with N
 #data we have says that Mexico does not have ITQs?
 in 2012 only ones it says we have are Australia, USA, Canda, Japan, Peru, Argentina, South Africa, New Zealand
 
-Fixing upsie data
+Fixing upside data
 - take ITQ projection an filter it down to idorig, year, BvBmsy", "FvFmsy", "itq", "iq", "ivq"
 - filter out just ones with itqs, create a column thats rights based fisherse and make it one
 - filter out specifics of itq
@@ -695,8 +814,21 @@ Fixing upsie data
 - also cut off at 5
 
 
+#this was from before figured out if then statement
 
-```{r}
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+itq_selected <- ITQ_projection %>%
+  select(IdOrig,Country, Year, BvBmsy, FvFmsy, itq, iq, ivq) %>%
+  filter(itq != "NA" | iq != "NA" | ivq != "NA") 
+
+itq_selected$rightsbased <- 1
+
+itq_selected_2 <- select(itq_selected,Country, IdOrig, Year, rightsbased)
+
+itq_new_join <- join(itq_selected_2, countries_itq_2012, by = c(Country, IdOrig, Year), type = "full")
+
+##not using this anymore
 
 ITQ_projection <- readRDS("processed_data//not_actively_used/ITQ_projection.rds")
 
@@ -717,24 +849,7 @@ f_b_itq <- ITQ_projection %>%
   select("BvBmsy", "FvFmsy", "itq", "iq", "ivq") %>%
   filter( itq != "NA", iq != "NA", ivq != "NA")
 
-#write.csv(f_b_itq, file = "f_b_itq.csv")
-f_b_irights <- read_csv("data/f_b_irights.csv")
 
-# get data frame that was
-F_B_graph <- ggplot(data = f_b_irights, aes( x=BvBmsy, y=FvFmsy, colour= i_rights, size = catch ))+
-  geom_point()+
-  labs(x = "B/Bmsy", y= "F/Fsmy") +
-  theme_minimal()+
-  theme(legend.title=element_blank())+
-  ylim(-1, 22)+
-  xlim(-.3, 3)+
-  geom_hline(aes(yintercept=1))+
-  geom_vline(aes(xintercept=1))
-
-#F_B_graph
-ggplotly(F_B_graph)
-
-```
 
 
 

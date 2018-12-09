@@ -1,0 +1,295 @@
+---
+title: "Draft_Figures"
+author: "Juliette Verstaen"
+date: "12/9/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(tidyr)
+  library(here)
+  library(ggplot2)
+  library(dplyr)
+  library(readxl)
+  library(devtools)
+  library(plotly)
+  library(base)
+  library(rio)
+  library(plyr)
+})
+```
+
+##From upside data: ITQ versus non ITQ and the size of dot is the catch
+
+Note: Corbett's ITQ data is only until 2012. Chris's upside data is now updated until 2016 with the more recent RAM data that Dan had. I ran all the figure and regressions under two "scenerios": 
+
+    1. until 2012
+    2. past 2012. extracted information about which fisheries had ITQs in 2012 and applied it   to the same fisheries into the future. This doesn't take into account other fisheries that   get ITQs in place during that time, or if fisheries stop ITQs 
+
+
+"KOBE" plots with ITQs not updated past 2012
+```{r}
+
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+f_b_itq <- ITQ_projection %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"))
+
+F_B_graph <- ggplot(data = f_b_itq, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(-1, 5)+
+  xlim(-.3, 3)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))
+
+#F_B_graph
+ggplotly(F_B_graph)
+
+```
+
+
+"KOBE" plots with ITQs updated past 2012
+```{r}
+
+ITQ_projection_updated <- readRDS("data/ITQ_projection_updated.rds")
+
+f_b_itq_updated <- ITQ_projection_updated %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"))
+
+
+F_B_graph_updated <- ggplot(data = f_b_itq_updated, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(-1, 5)+
+  xlim(-.3, 3)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))
+
+#F_B_graph
+ggplotly(F_B_graph_updated)
+```
+
+##From upside: the catch in ITQ versus non ITQ for most recent year
+
+Data until 2012
+```{r}
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+f_b_itq_countries <- ITQ_projection %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch", "Year", "Country", "IdOrig") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+countries_itq_2012 <- f_b_itq_countries %>%
+  select (Country, rightsbased, Year, IdOrig, Catch) %>%
+  filter(Year == "2012") 
+
+itq_2012_rightsbasedTRUE <- filter(countries_itq_2012, rightsbased == "1")
+
+itq_2012_rightsbasedFALSE <- filter(countries_itq_2012, rightsbased == "0")
+
+itq_2012_rightsbasedTURF <- filter(countries_itq_2012, rightsbased == "2")
+
+
+sum(itq_2012_rightsbasedTRUE$Catch, na.rm = TRUE)
+#7,420,003
+
+sum(itq_2012_rightsbasedFALSE$Catch, na.rm = TRUE)
+#142,231
+
+sum(itq_2012_rightsbasedTURF$Catch, na.rm = TRUE)
+#1,301,000
+```
+2012 total catch:
+ITQs: 7,420,003
+No ITQ: 142,231
+TURF:1,301,000
+
+Data past 2012
+```{r}
+
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+f_b_itq_countries <- ITQ_projection %>%
+  select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch", "Year", "Country", "IdOrig") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+countries_itq_2012 <- f_b_itq_countries %>%
+  select (Country, rightsbased, Year, IdOrig, Catch) %>%
+  filter(Year == "2012") 
+
+ITQ_projection_2016 <- ITQ_projection %>%
+  filter(Year == "2016") %>%
+  select(IdOrig, Country)
+
+itq_2016_updated <- join(ITQ_projection_2016, countries_itq_2012, by= c("IdOrig", "Country"), type= "full")
+
+itq_2016_rightsbasedTRUE <- filter(itq_2016_updated, rightsbased == "1")
+
+itq_2016_rightsbasedFALSE <- filter(itq_2016_updated, rightsbased == "0")
+
+itq_2016_rightsbasedTURF <- filter(itq_2016_updated, rightsbased == "2")
+
+
+sum(itq_2016_rightsbasedTRUE$Catch, na.rm = TRUE)
+#27,830,933
+
+sum(itq_2016_rightsbasedFALSE$Catch, na.rm = TRUE)
+#266,328,075
+
+sum(itq_2016_rightsbasedTURF$Catch, na.rm = TRUE)
+#1505000
+```
+
+2016 total catch:
+ITQs: 27,830,933
+No ITQ: 266,328,075
+TURF:1,505,000
+
+##Probability of ITQ 
+
+```{r}
+
+species_rightsbased <- read_csv("data/species_rightsbased.csv")
+
+gdp_all <- read_csv("/GitHub/global_fisheries_managment/data/gpd.csv")
+
+gdp <- filter(gdp_all, current_gdp != "NA")
+
+species_rightsbased_mutate <- species_rightsbased %>%
+  mutate(i_right = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) %>%
+  mutate(TURF = case_when(
+    turf == TRUE ~ "1", 
+    turf = FALSE ~"0"
+  )) 
+
+##why does this value have NAs in the first place? when mutate is does line 1 first and not registering the false = 0 one. but i guess it doesn't matter beacuse its either one or the other? this is not happening for i_right so thats weird
+
+species_rightsbased_mutate$TURF[is.na(species_rightsbased_mutate$TURF)] <- "0"
+
+gdp <- filter(gdp_all, current_gdp != "NA")
+
+join_gdp_rightsbased <- join(gdp, species_rightsbased_mutate, by = c("Country"), type = "full")
+
+gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
+
+gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
+gdp_rightsbased$i_right <- factor(gdp_rightsbased$i_right)
+
+itq_glm <- glm(formula = i_right ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
+itq_glm
+
+summary(itq_glm)
+
+```
+
+
+
+
+### this code chunk and the one above should be the same but they are not. figure out why sinc eth two data frames are pulled from the same original info
+```{r}
+
+#ISSCAAP_species <- read_csv("data/ISSCAAP_species.csv")
+#ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+#ITQ_projection_isscaap_1 <- join(ISSCAAP_species,ITQ_projection, by = c("SciName", "SpeciesCat"), type = "full" )
+
+#ITQ_projection_isscaap <- ITQ_projection_isscaap_1 %>%
+ # filter(Country != "NA") 
+
+species_rightsbased <- read_csv("data/species_rightsbased.csv")
+
+gdp_all <- read_csv("/GitHub/global_fisheries_managment/data/gpd.csv")
+
+gdp <- filter(gdp_all, current_gdp != "NA")
+
+
+species_rightsbased <- ITQ_projection_isscaap %>%
+  select("SciName", "Country", "SpeciesCat", "itq", "iq", "ivq", "turf", "Catch") %>%
+  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  mutate(i_right = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) %>%
+  mutate(turf = case_when(
+    turf == TRUE ~ "1", 
+    turf = FALSE ~"0"
+  )) %>%
+  select("SciName", "Country", "SpeciesCat", "i_right", "turf", "Catch")
+
+species_rightsbased$turf[is.na(species_rightsbased$turf)] <- "0"
+
+join_gdp_rightsbased <- join(gdp, species_rightsbased, by = c("Country"), type = "full")
+
+gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
+
+
+gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
+gdp_rightsbased$i_right <- factor(gdp_rightsbased$i_right)
+
+itq_glm <- glm(formula = i_right ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased)
+itq_glm
+
+summary(itq_glm)
+
+```
+
+##Run Turf versus ITQ probably: prob(ITQ). Turf = 1 and ITQ = 0 with the data set that was the turf/itq only one
+
+```{r}
+species_rightsbased <- read_csv("data/species_rightsbased.csv")
+
+gdp_all <- read_csv("/GitHub/global_fisheries_managment/data/gpd.csv")
+
+gdp <- filter(gdp_all, current_gdp != "NA")
+
+species_rightsbased_mutate_2 <- species_rightsbased %>%
+  mutate(rightbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "0",
+    turf == TRUE ~ "1"))
+
+gdp <- filter(gdp_all, current_gdp != "NA")
+
+join_gdp_rightsbased_2 <- join(gdp, species_rightsbased_mutate_2, by = c("Country"), type = "full")
+
+gdp_rightsbased_2 <- filter(join_gdp_rightsbased_2, SpeciesCat != "NA" )
+
+gdp_rightsbased_2$SpeciesCat <- factor(gdp_rightsbased_2$SpeciesCat)
+gdp_rightsbased_2$rightbased <- factor(gdp_rightsbased_2$rightbased)
+
+rightbased_glm <- glm(formula = rightbased ~ current_gdp + SpeciesCat, family = "binomial", data = gdp_rightsbased_2)
+rightbased_glm
+
+summary(rightbased_glm)
+
+```
+
+
