@@ -291,5 +291,46 @@ rightbased_glm
 summary(rightbased_glm)
 
 ```
+##5.	For MPA filter only for those that are “All” for No Take
+a.	Total area for each country
+b.	Top ten countries by area
+i.	make a bar graph and each x-axis label is a country
+
+PA_DEF: Allowed values: 1 (meets IUCN and/or CBD PA definition); 0 (does not meet IUCN and/or CBD PA definition (currently stored outside WDPA)).
+
+MARINE: Allowed values: 0 (100% Terrestrial PA), 1 (Coastal: marine and terrestrial PA), and 2 (100 % marine PA).
+
+```{r}
+
+mpa_updated <- read_csv("data/mpa_updated.csv") 
+
+mpa <- mpa_updated %>%
+  select(Country, REP_M_AREA, MARINE, NO_TAKE) %>%
+  filter(MARINE == "2" | MARINE == "1") %>%
+  filter(NO_TAKE == "All") %>%
+  group_by(Country)
+
+
+mpa_area <- aggregate(mpa$REP_M_AREA, by=list(Country=mpa$Country), FUN=sum)
+mpa_area
+
+names(mpa_area) <-c("Country", "Area")
+
+mpa_area_10 <- top_n(mpa_area, 10, Area)
+mpa_area_10
+
+
+ggplot(mpa_area_10, aes(x = Country, y = Area)) +
+  geom_bar(stat = "identity")
+
+mpa_area_nojurisdiction <-filter(mpa_area, Country != "Areas Beyond National Jurisdiction")
+mpa_area_nojurisdiction_10 <- top_n(mpa_area_nojurisdiction, 10, Area)
+mpa_area_nojurisdiction_10
+
+ggplot(mpa_area_nojurisdiction_10, aes(x = Country, y = Area)) +
+  geom_bar(stat = "identity")
+
+
+```
 
 
