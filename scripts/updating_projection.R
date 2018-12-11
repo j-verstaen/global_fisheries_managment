@@ -86,6 +86,4 @@ upside_2018_updated <- ITQ_projection %>%
 
 
 
-
-
               

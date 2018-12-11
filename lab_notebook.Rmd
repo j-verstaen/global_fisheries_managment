@@ -509,7 +509,10 @@ growth <- popgrowth(species)
 
 FAO website with fisheries data is currently unavaliable. Updated by hand for now; read in below 
 ```{r}
-species_rightsbased <- read_csv("processed_data/species_rightsbased.csv")
+species_rightsbased <- read_csv("data/species_rightsbased.csv")
+
+ISSCAAP_species <- select(species_rightsbased, SciName, SpeciesCat)
+#write.csv(ISSCAAP_species, file ="ISSCAAP_species.csv")
 ```
 -	used FAO 3-Alpha species codes (ASFIS) updated 2/2009
 -	ones with no ISSCAPP # still are shellfish, snails, crabs, not species specific, common name, species in NA, or a family name with more than 1 #
@@ -522,7 +525,7 @@ Part 4:
 For TURF/ITQ data, add GDP/capita for each country, also do ISCAAP categories. Combine all ITQ,IQ etc. Run logit of Prob(ITQ) = f(ISCAAP, GDP).
 ```{r}
 
-species_rightsbased <- read_csv("data/species_rightsbased_binary.csv")
+species_rightsbased_binary <- read_csv("data/species_rightsbased_binary.csv")
 
 upside_2018_updated <- readRDS("/GitHub/global_fisheries_managment/processed_data/upside_2018_updated.rds")
 
@@ -536,7 +539,7 @@ gdp_all <- read_csv("/GitHub/global_fisheries_managment/data/gpd.csv")
 
 gdp <- filter(gdp_all, current_gdp != "NA")
 
-join_gdp_rightsbased <- join(gdp, species_rightsbased, by = c("Country"), type = "full")
+join_gdp_rightsbased <- join(gdp, species_rightsbased_binary, by = c("Country"), type = "full")
 
 gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
 
@@ -724,8 +727,6 @@ ITQ_projection_updated <- join(ITQ_projection_past2012UPDATED,ITQ_projection_pre
 
 ITQ_projection_updated <- readRDS("data/ITQ_projection_updated.rds")
 
-
-
 f_b_itq_updated <- ITQ_projection_updated %>%
   select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch") %>%
   filter( itq != "NA", iq != "NA", ivq != "NA") %>%
@@ -797,6 +798,29 @@ sum(itq_2016_rightsbasedFALSE$Catch, na.rm = TRUE)
 
 
 ```
+
+###Need to update the ITQ_projection rds file and the ITQ_projection_updated rds file (1st file is without applying ITQ info past 2012 and the second is)
+
+##ADD THIS INTO THE SCRIPT FOR UPDATING UPSIDE DATA
+```{r}
+ISSCAAP_species <- read_csv("data/ISSCAAP_species.csv")
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+ITQ_projection_isscaap_1 <- join(ISSCAAP_species,ITQ_projection, by = c("SciName", "SpeciesCat"), type = "full" )
+
+ITQ_projection_isscaap <- ITQ_projection_isscaap_1 %>%
+  filter(Country != "NA") 
+
+
+```
+
+
+
+
+
+
+
+
 
 
 In the updated ITQ projection data there are lines of data that have 2012 with NA instead of TRUE/FALSE for itq. 

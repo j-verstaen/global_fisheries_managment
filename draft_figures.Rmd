@@ -28,13 +28,18 @@ suppressPackageStartupMessages({
 
 ##From upside data: ITQ versus non ITQ and the size of dot is the catch
 
-Note: Corbett's ITQ data is only until 2012. Chris's upside data is now updated until 2016 with the more recent RAM data that Dan had. I ran all the figure and regressions under two "scenerios": 
+Notes:
+- Corbett's ITQ data is only until 2012. Chris's upside data is now updated until 2016 with the more recent RAM data that Dan had. I ran all the figure and regressions under two "scenerios": 
 
     1. until 2012
-    2. past 2012. extracted information about which fisheries had ITQs in 2012 and applied it   to the same fisheries into the future. This doesn't take into account other fisheries that   get ITQs in place during that time, or if fisheries stop ITQs 
+    2. past 2012. extracted information about which fisheries had ITQs in 2012 and applied it to the same fisheries into the future. This doesn't take into account other fisheries implement ITQs past 2012, or if fisheries stop ITQs. Only countries with ITQs in 2012 are : Australia, USA, Canda, Japan, Peru, Argentina, South Africa, New Zealand
 
+- for all ITQ related analyzes, limited to fisheries that Corbette had data on. I remove the fisheries that have no information on presence or absence of ITQs. I am unsure if this is biasing the data; should we assume that the fisheries with no information on ITQs have no ITQs or not? This seems like it woud be biased as well. 
+    - Corbette's ITQ data includes 375 different fisheries years 1950-2012 for a total of ~15,000 lines of data 
+    
 
 "KOBE" plots with ITQs not updated past 2012
+All fisheries 1950-2012 
 ```{r}
 
 ITQ_projection <- readRDS("data/ITQ_projection.rds")
@@ -46,6 +51,9 @@ f_b_itq <- ITQ_projection %>%
     itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
     itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"))
 
+f_b_itq$rightsbased[f_b_itq$rightsbased == "0"]<- "No ITQ"
+f_b_itq$rightsbased[f_b_itq$rightsbased == "1"]<- "ITQ"
+
 F_B_graph <- ggplot(data = f_b_itq, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
   geom_point()+
   labs(x = "B/Bmsy", y= "F/Fsmy") +
@@ -54,7 +62,8 @@ F_B_graph <- ggplot(data = f_b_itq, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased
   ylim(-1, 5)+
   xlim(-.3, 3)+
   geom_hline(aes(yintercept=1))+
-  geom_vline(aes(xintercept=1))
+  geom_vline(aes(xintercept=1))+
+  ggtitle("Fisheries 1950-2012")
 
 #F_B_graph
 ggplotly(F_B_graph)
@@ -74,6 +83,8 @@ f_b_itq_updated <- ITQ_projection_updated %>%
     itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
     itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"))
 
+f_b_itq_updated$rightsbased[f_b_itq_updated$rightsbased == "0"]<- "No ITQ"
+f_b_itq_updated$rightsbased[f_b_itq_updated$rightsbased == "1"]<- "ITQ"
 
 F_B_graph_updated <- ggplot(data = f_b_itq_updated, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
   geom_point()+
@@ -83,7 +94,8 @@ F_B_graph_updated <- ggplot(data = f_b_itq_updated, aes( x=BvBmsy, y=FvFmsy, col
   ylim(-1, 5)+
   xlim(-.3, 3)+
   geom_hline(aes(yintercept=1))+
-  geom_vline(aes(xintercept=1))
+  geom_vline(aes(xintercept=1))+
+  ggtitle("Fisheries 1950-2016")
 
 #F_B_graph
 ggplotly(F_B_graph_updated)
@@ -91,13 +103,13 @@ ggplotly(F_B_graph_updated)
 
 ##From upside: the catch in ITQ versus non ITQ for most recent year
 
-Data until 2012
+###Total Catch ITQ, No ITQ, TURF in 2012
 ```{r}
 ITQ_projection <- readRDS("data/ITQ_projection.rds")
 
 f_b_itq_countries <- ITQ_projection %>%
   select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch", "Year", "Country", "IdOrig") %>%
-  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  filter( itq != "NA" & iq != "NA" & ivq != "NA" & turf != "NA") %>%
   mutate(rightsbased = case_when(
     turf == TRUE ~ "2",
     itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
@@ -125,31 +137,33 @@ sum(itq_2012_rightsbasedTURF$Catch, na.rm = TRUE)
 ```
 2012 total catch:
 ITQs: 7,420,003
-No ITQ: 142,231
-TURF:1,301,000
+No ITQ: 142,231 (all USA)
+TURF:1,301,000 (all Japan)
+**note: what units is the catch in the upside/rams data?**
 
-Data past 2012
+###Total Catch ITQ, No ITQ, TURF in 2016
 ```{r}
 
 ITQ_projection <- readRDS("data/ITQ_projection.rds")
 
 f_b_itq_countries <- ITQ_projection %>%
   select("BvBmsy", "FvFmsy", "itq", "iq", "ivq", "turf", "Catch", "Year", "Country", "IdOrig") %>%
-  filter( itq != "NA", iq != "NA", ivq != "NA") %>%
+  filter( itq != "NA" & iq != "NA" & ivq != "NA" & turf != "NA") %>%
   mutate(rightsbased = case_when(
     turf == TRUE ~ "2",
     itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
     itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
 
-countries_itq_2012 <- f_b_itq_countries %>%
-  select (Country, rightsbased, Year, IdOrig, Catch) %>%
-  filter(Year == "2012") 
+countries_itq_2012_2 <- f_b_itq_countries %>%
+  select (Country, rightsbased, Year, IdOrig) %>%
+  filter(Year == "2012")  %>%
+  select(Country, rightsbased, IdOrig)
 
 ITQ_projection_2016 <- ITQ_projection %>%
   filter(Year == "2016") %>%
-  select(IdOrig, Country)
+  select(IdOrig, Country, Year, Catch)
 
-itq_2016_updated <- join(ITQ_projection_2016, countries_itq_2012, by= c("IdOrig", "Country"), type= "full")
+itq_2016_updated <- join(ITQ_projection_2016, countries_itq_2012_2, by= c("IdOrig", "Country"), type= "full")
 
 itq_2016_rightsbasedTRUE <- filter(itq_2016_updated, rightsbased == "1")
 
@@ -159,19 +173,23 @@ itq_2016_rightsbasedTURF <- filter(itq_2016_updated, rightsbased == "2")
 
 
 sum(itq_2016_rightsbasedTRUE$Catch, na.rm = TRUE)
-#27,830,933
+#26,293,606
 
 sum(itq_2016_rightsbasedFALSE$Catch, na.rm = TRUE)
-#266,328,075
+#1,154,957
 
 sum(itq_2016_rightsbasedTURF$Catch, na.rm = TRUE)
-#1505000
+#382,370.4
 ```
 
 2016 total catch:
 ITQs: 27,830,933
-No ITQ: 266,328,075
-TURF:1,505,000
+No ITQ: 266,328,075 (all in the USA)
+TURF:1,505,000 (all in Japan)
+
+
+**note: This analyze does not include TURF information from DiscoverTurf GP because that data is not fishery specific enough to merge with the upside/Corbette data**
+
 
 ##Probability of ITQ 
 

@@ -86,4 +86,4 @@ true_turf_itq_iscaap[is.na(true_turf_itq_iscaap)] <- "NA"
 
 
 ####FAO website has been down, can't access the species list with FAO numbers associated. did it by hanf for now: read in below csv file for updated with FAO numbers
-species_rightsbased <- read_csv("processed_data/species_rightsbased.csv")
+species_rightsbased <- read_csv("data/species_rightsbased.csv")
