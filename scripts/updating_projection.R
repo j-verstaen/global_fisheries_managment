@@ -39,9 +39,8 @@ ram <- timeseries_values_views %>%
 colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy", "DBase")
 
 
-
 #Update Projection with RAM
-projection_updated <- join(projection_data, ram, by = c("CommName", "Year"), type = "full")
+projection_updated <- join(ram, projection_data, by = c("CommName", "Year"), type = "full")
 
 #Merge Projection and ITQ
 #seperate out IdOrig column for Projection Data
@@ -69,6 +68,9 @@ ITQ_projection <- ITQ_projection_merge %>% unite(IdOrig, assess_id_short, t0, tf
 ITQ_projection_simple <- ITQ_projection %>%
   select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "Catch", "Biomass", "BvBmsy", "FvFmsy","MSY", "Price", "g", "k", "c", "phi", "yearitq", "itq_now", "turf", "programstart")
 
+
+#saveRDS(ITQ_projection, "ITQ_projection.rds")
+
 #create RDS from datafram
 #saveRDS(ITQ_projection_simple, "projection_updated.rds")
 
@@ -79,7 +81,7 @@ upside_2018_updated <- ITQ_projection %>%
   select("Country", "Year", "CommName", "SciName", "SpeciesCat", "CatchShare", "Catch", "Biomass", "BvBmsy", "FvFmsy","MSY", "Price", "g", "k", "c", "phi")
 
 #create RDS from dataframe
-#saveRDS(upside_2018_updated, "upside_2018_updated")
+saveRDS(upside_2018_updated, "upside_2018_updated.rds")
 #write.csv(upside_2018_updated, file = "upside_2018_updated")
 
 
