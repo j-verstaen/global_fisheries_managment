@@ -25,6 +25,7 @@ suppressPackageStartupMessages({
   library(base)
   library(rio)
   library(plyr)
+  library(data.table)
 })
 
 
@@ -817,12 +818,6 @@ ITQ_projection_isscaap <- ITQ_projection_isscaap_1 %>%
 
 
 
-
-
-
-
-
-
 In the updated ITQ projection data there are lines of data that have 2012 with NA instead of TRUE/FALSE for itq. 
 
 #data we have says that Mexico does not have ITQs?
@@ -873,9 +868,175 @@ f_b_itq <- ITQ_projection %>%
   select("BvBmsy", "FvFmsy", "itq", "iq", "ivq") %>%
   filter( itq != "NA", iq != "NA", ivq != "NA")
 
+ISSCAAP Codes and the non-species specific codes
+```{r}
+
+meta_isscaap_codes_1 <- join(isscaap_codes, ISSCAAP_species, by = c("SciName", "SpeciesCat"), type = "full")
+
+meta_isscaap_codes <- unique( meta_isscaap_codes_1[ , 1:2 ] )
+write_csv(meta_isscaap_codes, "meta_isscaap_codes.csv")
+```
 
 
+12/18/2018
+Using the newly updated upside/ITQ and filtering out only the most recent date for each fishery
+- make a df of these that have ITQs and those that don't -> apply to OG upside/ITQ data so that more recent years can have ITQ data
+- take this new df and filter out the most recent years with ITQs and KOBE plot. also do catches
 
+```{r}
+
+ITQ_projection <- readRDS("data/ITQ_projection.rds")
+
+upside_2016 <- ITQ_projection %>%
+  filter(Year <= "2016") %>%
+  unite(id_country, IdOrig, Country, sep = "-")
+
+upside_recent <- setDT(upside_2016)[,.SD[which.max(Year)],keyby=id_country]
+
+upside_allfisheriesITQ <- upside_recent %>%
+  select (id_country, itq, iq, ivq, Year, turf) %>%
+  filter(itq != "NA" & iq != "NA" & ivq != "NA" ) 
+
+```
+
+#closer look at corbett's data
+```{r}
+Countries_ITQ <- read_excel("data/Countries_ITQ.xlsx")
+
+corbette_recent <- setDT(Countries_ITQ)[,.SD[which.max(year)],keyby=assess_id_short]
+
+corbette_fisheries <- corbette_recent %>%
+  select(assess_id_short, year, speciescat, iq, itq, ivq, coop, turf)%>%
+  filter(itq != "NA" & iq != "NA" & ivq != "NA" ) 
+
+fisheries_with_turfs <- corbette_fisheries %>%
+  filter(turf != "FALSE")
+
+fisheries_with_itq <- corbette_fisheries %>%
+   filter(itq == "TRUE" | iq == "TRUE" | ivq == "TRUE" )
+
+```
+
+reupdating upside data with new ITQ list
+```{r}
+#Load Data
+#Upside data
+projection_data <- readRDS("data/projection_data.rds")
+
+#RAMS
+load("data/DBdata-model_fits_included.RData")
+
+
+#RAM Data Tiddying
+ram <- timeseries_values_views %>%
+  select("stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref") %>%
+  add_column("RAM")
+
+colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy", "DBase")
+
+#Update Projection with RAM
+projection_updated <- join(ram, projection_data, by = c("CommName", "Year"), type = "full")
+
+separate_projection <- projection_updated%>% 
+  separate(IdOrig, c("agency", "stock", "t0", "tf", "data_enterer"))
+
+unite_projection <- separate_projection %>% 
+  unite(assess_id_short, agency, stock, sep = "-")
+
+colnames(fisheries_with_itq) <- c("assess_id_short", "Year","SpeciesCat" , "iq", "itq", "ivq", "coop", "turf")
+
+fishery_itq_simple <- fisheries_with_itq %>%
+  select(assess_id_short,"iq", "itq", "ivq", "turf" )
+
+ITQ_projection_merge <- merge(unite_projection, fisheries_with_itq, by = c("assess_id_short"), all = TRUE)
+
+recent_pre2016 <- ITQ_projection_merge %>%
+  filter(Year.x <= "2016")
+  
+fisheries_recent_1 <- setDT(recent_pre2016)[,.SD[which.max(Year.x)],keyby=assess_id_short]
+
+fisheries_recent <- fisheries_recent_1 %>%
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq, turf)
+
+#fisheries_recent <- write.csv(fisheries_recent, file = "fisheries_recent.csv")
+
+```
+
+##KOBE Plots with only most recent year of fisheries
+RAM only
+No data: ITQ = FALSE
+
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+fisheries_KOBE_ram <- fisheries_recent %>%
+  filter(Dbase == "RAM") %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "0"]<- "No ITQ"
+fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "1"]<- "ITQ"
+
+F_B_graph_RAM <- ggplot(data = fisheries_KOBE_ram, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(0, 2.5)+
+  xlim(0, 2.5)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  ggtitle("KOBE Plot: RAM only Fisheries")
+
+#F_B_graph
+ggplotly(F_B_graph)
+
+
+```
+
+##KOBE Plots with only most recent year of fisheries
+RAM only
+No data: ITQ = FALSE
+```{r}
+
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+fisheries_KOBE <- fisheries_recent %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "0"]<- "No ITQ"
+fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "1"]<- "ITQ"
+
+F_B_graph <- ggplot(data = fisheries_KOBE, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(0, 2.5)+
+  xlim(0, 2.5)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  ggtitle("KOBE Plot:  All Fisheries")
+
+#F_B_graph
+ggplotly(F_B_graph)
+
+```
 
 
 
