@@ -1,0 +1,99 @@
+---
+title: "draft_figures_12.18.18"
+author: "Juliette Verstaen"
+date: "12/18/2018"
+output: pdf_document
+toc: true
+toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE }
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(tidyr)
+  library(here)
+  library(ggplot2)
+  library(dplyr)
+  library(readxl)
+  library(devtools)
+  library(plotly)
+  library(base)
+  library(rio)
+  library(plyr)
+})
+```
+
+
+##KOBE Plots with only most recent year of fisheries
+###RAM only
+No data: ITQ = FALSE
+
+```{r}
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+```
+
+
+```{r}
+
+
+fisheries_KOBE_ram <- fisheries_recent %>%
+  filter(Dbase == "RAM") %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "0"]<- "No ITQ"
+fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "1"]<- "ITQ"
+
+ ggplot(data = fisheries_KOBE_ram, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(0, 2.5)+
+  xlim(0, 2.5)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  ggtitle("KOBE Plot: RAM only Fisheries")
+
+```
+
+
+##KOBE Plots with only most recent year of fisheries
+###All Data Sources
+No data: ITQ = FALSE
+```{r}
+
+
+fisheries_KOBE <- fisheries_recent %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "0"]<- "No ITQ"
+fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "1"]<- "ITQ"
+
+ggplot(data = fisheries_KOBE, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(0, 2.5)+
+  xlim(0, 2.5)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  ggtitle("KOBE Plot:  All Fisheries")
+
+
+```
+
