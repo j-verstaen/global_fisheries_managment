@@ -97,3 +97,83 @@ ggplot(data = fisheries_KOBE, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size
 
 ```
 
+
+##Total Catches in most recent year of ITQ, no ITQ, and Turfs
+```{r}
+
+fisheries_rightsbased <- fisheries_recent %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0", 
+    ))
+
+turfs <- filter(fisheries_rightsbased, rightsbased == "2")
+itq <- filter(fisheries_rightsbased, rightsbased == "1")
+no_itq <- filter(fisheries_rightsbased, rightsbased == "0")
+
+sum(turfs$Catch, na.rm = TRUE)
+#20,217,168
+
+sum(itq$Catch, na.rm = TRUE)
+#1,154,957
+
+sum(no_itq$Catch, na.rm = TRUE)
+#382,370.4
+```
+turf = 0
+itq = 4,056,613
+no itq = 66,156,579
+
+
+## adding turf information to upside projection
+```{r}
+
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf)
+
+fisheries_recent_generousturf_1 <- select(fisheries_recent, Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+
+fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
+
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    ))
+
+turfs <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "2")
+itq <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "1")
+no_itq <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "0")
+
+sum(turfs$Catch, na.rm = TRUE)
+
+sum(itq$Catch, na.rm = TRUE)
+
+sum(no_itq$Catch, na.rm = TRUE)
+
+69025951/78938573
+
+
+```
+
+Generous Turf Catch Estimates:
+
+turf = 1,357,098 -> 1.72% global catch
+itq= 8,555,524 -> 10.8% global catch
+no itq =  69,025,951 -> 87.44% global catch
+
+Total: 78,938,573
+
+
+
+
+
