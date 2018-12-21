@@ -899,27 +899,28 @@ upside_allfisheriesITQ <- upside_recent %>%
 
 ```
 
-#closer look at corbett's data
+#Pulling out information about ITQs/TURFs in Corbette Data to apply to upside data
 ```{r}
+
 Countries_ITQ <- read_excel("data/Countries_ITQ.xlsx")
 
+#new dataframw with just most recent year of data for each fishery
 corbette_recent <- setDT(Countries_ITQ)[,.SD[which.max(year)],keyby=assess_id_short]
 
+#filter out the fisheries with no data on itqs or turfs
 corbette_fisheries <- corbette_recent %>%
   select(assess_id_short, year, speciescat, iq, itq, ivq, coop, turf)%>%
-  filter(itq != "NA" & iq != "NA" & ivq != "NA" ) 
+  filter(itq != "NA" & iq != "NA" & ivq != "NA")%>%
+  filter(turf != "NA" ) 
 
-fisheries_with_turfs <- corbette_fisheries %>%
-  filter(turf != "FALSE")
 
+#new data frame with just data on fisheries with itqs
 fisheries_with_itq <- corbette_fisheries %>%
-   filter(itq == "TRUE" | iq == "TRUE" | ivq == "TRUE" )
+   filter(itq == "TRUE" | iq == "TRUE" | ivq == "TRUE" | turf == "TRUE" )
 
 ```
 
 reupdating upside data with new ITQ list
-
-###JULIETTE: check why the fisheries recent only has FALSE for turfs and no TRUEs
 
 ```{r}
 #Load Data
@@ -939,7 +940,9 @@ colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy", 
 
 #Update Projection with RAM
 projection_updated <- join(ram, projection_data, by = c("CommName", "Year"), type = "full")
+##note: RAM data has some fisheries not in the projection data, thus adding new fisheries to the upside projection data
 
+#separate and unit functions to create a shorter version of the stock assessment ID to merge with corbette ITQ/TURF data later
 separate_projection <- projection_updated%>% 
   separate(IdOrig, c("agency", "stock", "t0", "tf", "data_enterer"))
 
@@ -948,19 +951,24 @@ unite_projection <- separate_projection %>%
 
 colnames(fisheries_with_itq) <- c("assess_id_short", "Year","SpeciesCat" , "iq", "itq", "ivq", "coop", "turf")
 
+#merge corbette's data on ITQ/Turf implemented or not for each fishery
 fishery_itq_simple <- fisheries_with_itq %>%
   select(assess_id_short,iq, itq, ivq, turf )
 
 ITQ_projection_merge <- merge(unite_projection, fisheries_with_itq, by = c("assess_id_short"), all = TRUE)
 
+#filter out data post 2016 because we know that those are projected/modeled data not recorded
 recent_pre2016 <- ITQ_projection_merge %>%
   filter(Year.x <= "2016")
-  
+
+#keep only info on most recent year for each fishery  
 fisheries_recent_1 <- setDT(recent_pre2016)[,.SD[which.max(Year.x)],keyby=assess_id_short]
 
+#select the columns we are interested in
 fisheries_recent <- fisheries_recent_1 %>%
   select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq, turf)
 
+#write dataframe to csv file
 #fisheries_recent <- write.csv(fisheries_recent, file = "fisheries_recent.csv")
 
 ```
@@ -971,19 +979,25 @@ No data: ITQ = FALSE
 
 ```{r}
 
+#read in data: this is updated projection data (updated using RAMs) and Corbett's ITQ/Turf data applied to each fishery. only data for most recent year for each fishery is represented.
+
 fisheries_recent <- read_csv("data/fisheries_recent.csv")
 
+#assuming that when no data is avaliable on the fishery inregardes to ITQ or Turfs that means there are none
 fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
 fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
 fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
 fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 
+#only looking at fisheries data that come from RAMS database
+# creating new column called "rightsbased" where 1 = ITQ and 0 = No ITQ
 fisheries_KOBE_ram <- fisheries_recent %>%
   filter(Dbase == "RAM") %>%
   mutate(rightsbased = case_when(
     itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
     itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
 
+#graphing logistics
 fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "0"]<- "No ITQ"
 fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "1"]<- "ITQ"
 
@@ -999,7 +1013,7 @@ F_B_graph_RAM <- ggplot(data = fisheries_KOBE_ram, aes( x=BvBmsy, y=FvFmsy, colo
   ggtitle("KOBE Plot: RAM only Fisheries")
 
 #F_B_graph
-ggplotly(F_B_graph)
+ggplotly(F_B_graph_RAM)
 
 
 ```
@@ -1009,9 +1023,10 @@ RAM only
 No data: ITQ = FALSE
 ```{r}
 
-
+#read in data: this is updated projection data (updated using RAMs) and Corbett's ITQ/Turf data applied to each fishery. only data for most recent year for each fishery is represented.
 fisheries_recent <- read_csv("data/fisheries_recent.csv")
 
+#assuming that when no data is avaliable on the fishery inregardes to ITQ or Turfs that means there are none
 fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
 fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
 fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
@@ -1025,6 +1040,7 @@ fisheries_KOBE <- fisheries_recent %>%
 fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "0"]<- "No ITQ"
 fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "1"]<- "ITQ"
 
+#graphing logistics
 F_B_graph <- ggplot(data = fisheries_KOBE, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
   geom_point()+
   labs(x = "B/Bmsy", y= "F/Fsmy") +
@@ -1041,9 +1057,10 @@ ggplotly(F_B_graph)
 
 ```
 
-## adding turf information to upside projection (use fisheries recent?)
+## adding turf information to upside projection(ie: fisheries_recent)
 ```{r}
 
+#load in data for turf/itq only projection
 turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
 
 turf_only <- turf_itq_isscaap %>%
@@ -1051,8 +1068,10 @@ turf_only <- turf_itq_isscaap %>%
 
 fisheries_recent_generousturf_1 <- select(fisheries_recent, Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
 
-fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
+#merge the most recent data on each fishery with turf data
+fisheries_recent_generousturf <- merge(fisheries_recent_generousturf_1, turf_only, by = c("Country", "SciName")) #, all = "TRUE")
 
+#assuming that when no data is present for itqs/turf that means there are none
 fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
 fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
 fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
@@ -1062,9 +1081,11 @@ fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
   mutate(rightsbased = case_when(
     turf == TRUE ~ "2",
     itq == FALSE & iq == FALSE & ivq == FALSE ~ "0",
-    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1"
     ))
 
+#create dfs for turf, itq, and no itq fisheries to calculate the sum of each
+#NOTE to rememeber: the data from these fisheries are the most recent numbers we have. they are not all in the same year 
 turfs <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "2")
 itq <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "1")
 no_itq <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "0")
@@ -1108,14 +1129,10 @@ fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
 
 turf_only <- turf_itq_isscaap %>%
-  select(SciName, Country, turf, SpeciesCat) %>%
-  filter(SpeciesCat != 91) %>%
-  filter(SpeciesCat != 92)
+  select(SciName, Country, turf, SpeciesCat) 
 
 fisheries_recent_generousturf_1 <- fisheries_recent %>%
-  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)%>%
-  filter(SpeciesCat.x != 91) %>%
-  filter(SpeciesCat.x != 92)
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
 
 fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
 
@@ -1165,14 +1182,10 @@ fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
 
 turf_only <- turf_itq_isscaap %>%
-  select(SciName, Country, turf, SpeciesCat) %>%
-  filter(SpeciesCat != 91) %>%
-  filter(SpeciesCat != 92)
+  select(SciName, Country, turf, SpeciesCat) 
 
 fisheries_recent_generousturf_1 <- fisheries_recent %>%
-  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)%>%
-  filter(SpeciesCat.x != 91) %>%
-  filter(SpeciesCat.x != 92)
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
 
 fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
 
@@ -1210,8 +1223,35 @@ summary(itq_turf_glm)
 
 ```
 
+##Diagnostics
+
+```{r}
+
+##run above chunk to get gdp_rightsbased df not the old csv file that is now archived in data folder
+
+diagnostics <- gdp_rightsbased %>%
+  mutate(management = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    turf == TRUE ~ "2",
+    itq == FALSE | iq == FALSE | ivq == FALSE | turf == FALSE ~ "0"
+    )) %>%
+  select(Country, gdp_center, SpeciesCat, management)
+
+#diagnostics wont run with non-numeric?
+diagnostics$SpeciesCat <- as.numeric(diagnostics$SpeciesCat)
+diagnostics$management <- as.numeric(diagnostics$management)
+
+#2= gdp; 4= turf; 5 = SpeciesCat; 23 = itq; 24= ivq; 25 = iq; 26= binary rights based
+pairs(diagnostics[2:4]) 
+
+#pearson's r correlations
+cor(diagnostics[2:4]) 
+
+#run chi square?
 
 
+```
+## MPA stuff
 
 
 

@@ -313,5 +313,35 @@ summary(itq_turf_glm)
 
 ```
 
+## run diagnostics
+
+##Diagnostics
+
+```{r}
+
+##run above chunk to get gdp_rightsbased df not the old csv file that is now archived in data folder
+
+diagnostics <- gdp_rightsbased %>%
+  mutate(management = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    turf == TRUE ~ "2",
+    itq == FALSE | iq == FALSE | ivq == FALSE | turf == FALSE ~ "0"
+    )) %>%
+  select(Country, gdp_center, SpeciesCat, management)
+
+#diagnostics wont run with non-numeric?
+diagnostics$SpeciesCat <- as.numeric(diagnostics$SpeciesCat)
+diagnostics$management <- as.numeric(diagnostics$management)
+
+#2= gdp; 4= turf; 5 = SpeciesCat; 23 = itq; 24= ivq; 25 = iq; 26= binary rights based
+pairs(diagnostics[2:4]) 
+
+#pearson's r correlations
+cor(diagnostics[2:4]) 
+
+#run chi square?
+
+
+```
 
 ####Bar Chart: Coefficient Species Category
