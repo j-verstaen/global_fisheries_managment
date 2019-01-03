@@ -1254,5 +1254,520 @@ cor(diagnostics[2:4])
 ## MPA stuff
 
 
+##12/23/2018
+
+##KOBE Plots with only most recent year of fisheries
+###RAM only
+No data: ITQ = FALSE
+
+```{r}
+
+#read in data: this is updated projection data (updated using RAMs) and Corbett's ITQ/Turf data applied to each fishery. only data for most recent year for each fishery is represented.
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+#assuming that when no data is avaliable on the fishery inregardes to ITQ or Turfs that means there are none
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+```
+
+
+```{r}
+
+#only looking at fisheries data that come from RAMS database
+# creating new column called "rightsbased" where 1 = ITQ and 0 = No ITQ
+fisheries_KOBE_ram <- fisheries_recent %>%
+  filter(Dbase == "RAM") %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+#graphing 
+fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "0"]<- "No ITQ"
+fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "1"]<- "ITQ"
+
+ggplot(data = fisheries_KOBE_ram, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(0, 2.5)+
+  xlim(0, 2.5)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  ggtitle("KOBE Plot: RAM only Fisheries")
+
+```
+
+
+##KOBE Plots with only most recent year of fisheries
+###All Data Sources
+No data: ITQ = FALSE
+```{r}
+
+fisheries_KOBE <- fisheries_recent %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0")) 
+
+fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "0"]<- "No ITQ"
+fisheries_KOBE$rightsbased[fisheries_KOBE$rightsbased == "1"]<- "ITQ"
+
+#graphing 
+F_B_graph <- ggplot(data = fisheries_KOBE, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(0, 2.5)+
+  xlim(0, 2.5)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  ggtitle("KOBE Plot:  All Fisheries")
+
+```
+
+LOOK AT THIS TOMORROW. ITQ AND NO ITQ CATCH PROJECTIONS SHOULD BE THE SAME, USING SAME DATA, BUT THEY ARE NOT. WTF?
+
+##Total Catches in most recent year of ITQ, no ITQ, and Turfs
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+#assuming that when no data is present for itqs/turf that means there are none
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+
+fisheries_rightsbased <- fisheries_recent %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1"
+    ))
+
+turfs <- filter(fisheries_rightsbased, rightsbased == "2")
+itq <- filter(fisheries_rightsbased, rightsbased == "1")
+no_itq <- filter(fisheries_rightsbased, rightsbased == "0")
+
+sum(turfs$Catch, na.rm = TRUE)
+#174065.5
+
+sum(itq$Catch, na.rm = TRUE)
+#3874741
+
+sum(no_itq$Catch, na.rm = TRUE)
+#66155763
+
+```
+
+turf = 174,065.5 = 0.248% of total catch
+itq = 3,874,741 = 5.5% of total catch
+no itq = 66,155,763 = 94.23% of total catch
+Total = 70,204,569.5
+
+## Total Catch: A more generous estimation of Turf catch
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+#load in data for turf/itq only projection
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf)
+
+fisheries_recent_generousturf_1 <- select(fisheries_recent, Country, assess_id_short, Year.x,SciName, Catch, itq, ivq, iq)
+
+#merge the most recent data on each fishery with turf data
+fisheries_recent_generousturf <- merge(fisheries_recent_generousturf_1,turf_only, by = c("Country", "SciName") , all.x = "TRUE")
+
+#assuming that when no data is present for itqs/turf that means there are none
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1"
+    ))
+
+#create dfs for turf, itq, and no itq fisheries to calculate the sum of each
+#NOTE to rememeber: the data from these fisheries are the most recent numbers we have. they are not all in the same year 
+turfs_generous <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "2")
+itq_generous <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "1")
+no_itq_generous <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "0")
+
+sum(turfs_generous$Catch, na.rm = TRUE)
+#1530353
+
+sum(itq_generous$Catch, na.rm = TRUE)
+#8374634
+
+sum(no_itq_generous$Catch, na.rm = TRUE)
+#69025946
+
+```
+
+Generous Turf Catch Estimates:
+
+turf = 1,530,353 -> 1.93% global catch
+itq= 8,374,634 -> 10.6% global catch
+no itq =  69,025,946 -> 87.46% global catch
+
+Total: 78,930,933
+
+*note: 5643 actual rows
+5707 when manually added added
+- this means 64 species were matched with existing species in database
+- when separated out all by species it was worse
+- separate remaining by genus?
+
+##Logit regressions
+
+new UN GDP data, 2016 only
+Scaled GDPs
+Rerun Regressions
+###itq or turf: probablity of itq = f(ISSCAPP and GDP)
+
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf, SpeciesCat) 
+
+fisheries_recent_generousturf_1 <- fisheries_recent %>%
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+
+fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
+
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE | iq == FALSE | ivq == FALSE ~ "0"
+    ))
+
+gdp_all <- read_excel("data/un_gdp_2016.xls")
+
+gdp <- gdp_all %>%
+  select(Country, gdp_center) %>%
+  filter( gdp_center != "NA") 
+
+
+merge_gdp_rightsbased <- merge(gdp, fisheries_recent_generousturf_rightsbased, by = c("Country"))
+
+gdp_rightsbased <- filter(merge_gdp_rightsbased, SpeciesCat != "NA" )
+
+gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
+gdp_rightsbased$rightsbased <- as.numeric(gdp_rightsbased$rightsbased)
+                              
+
+itq_glm <- glm(formula = rightsbased ~ gdp_center + SpeciesCat, family = "binomial", data = gdp_rightsbased)
+itq_glm
+
+summary(itq_glm)
+```
+
+##Larger Categories for ISSCAAP Codes
+11,13 = freshwater fish = 1
+22-24 = diadromous fishes = 2
+31-35, 37 = marine fishes = 3
+42-45,47 = crustaceans = 4
+52-58 = molluscs = 5
+74,76,77 = miscellaneous aquatic animals = 7
+
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf, SpeciesCat) 
+
+fisheries_recent_generousturf_1 <- fisheries_recent %>%
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+
+colnames(fisheries_recent_generousturf_1) <- c("Country", "assess_id_short", "Year", "CommName", "Biomass", "Catch", "BvBmsy", "FvFmsy", "Dbase", "SciName", "IdLevel", "SpeciesCat", "Profits", "MSY", "Price", "g", "k", "c", "phi", "itq", "ivq", "iq")
+
+fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName", "SpeciesCat"), all = "TRUE")
+
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_regression_1 <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE | iq == FALSE | ivq == FALSE ~ "0"
+    )) %>%
+  mutate(MainCat = case_when(
+    SpeciesCat == 11 | SpeciesCat == 13 ~ "1",
+    SpeciesCat == 22 | SpeciesCat == 23 | SpeciesCat == 24 ~ "2",
+    SpeciesCat == 31 | SpeciesCat == 32 | SpeciesCat == 33 | SpeciesCat == 34 | SpeciesCat     == 35 | SpeciesCat == 37 ~ "3",
+    SpeciesCat == 42 | SpeciesCat == 43 | SpeciesCat == 44 | SpeciesCat == 45 | SpeciesCat      == 47 ~ "4",
+    SpeciesCat == 52 | SpeciesCat == 53 | SpeciesCat ==54 |  SpeciesCat == 55 | SpeciesCat     == 56 | SpeciesCat == 57 | SpeciesCat == 58 ~ "5",
+    SpeciesCat == 74 | SpeciesCat == 76 | SpeciesCat == 77 ~ "7"
+  )) %>%
+  select(Country, SciName, MainCat, rightsbased) %>%
+  filter(MainCat != "NA")
+
+
+gdp_all <- read_excel("data/un_gdp_2016.xls")
+
+gdp <- gdp_all %>%
+  select(Country, gdp_center) %>%
+  filter( gdp_center != "NA") 
+
+
+merge_gdp_mc_rb <- merge(gdp, fisheries_recent_regression_1, by = c("Country"))
+
+gdp_mc_rb <- filter(merge_gdp_mc_rb, MainCat != "NA" )
+
+gdp_mc_rb$MainCat <- factor(gdp_mc_rb$MainCat)
+gdp_mc_rb$rightsbased <- as.numeric(gdp_mc_rb$rightsbased)
+                              
+
+itq_glm_mc <- glm(formula = rightsbased ~ gdp_center + MainCat, family = "binomial", data = gdp_mc_rb)
+
+itq_glm_mc
+
+summary(itq_glm_mc)
+
+```
+
+
+Run Turf versus ITQ probably: prob(ITQ). Turf = 1 and ITQ = 0 with the data set that was the turf/itq only one
+```{r}
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf, SpeciesCat) 
+
+fisheries_recent_generousturf_1 <- fisheries_recent %>%
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+
+fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
+
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "1",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "0"
+    ))
+
+gdp_all <- read_excel("data/un_gdp_2016.xls")
+
+gdp <- gdp_all %>%
+  select(Country, gdp_center) %>%
+  filter( gdp_center != "NA") 
+
+join_gdp_rightsbased <- merge(gdp, fisheries_recent_generousturf_rightsbased, by = c("Country"))
+
+gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
+
+gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
+gdp_rightsbased$rightsbased <- as.numeric(gdp_rightsbased$rightsbased)
+                              
+
+itq_turf_glm <- glm(formula = rightsbased ~ gdp_center + SpeciesCat, family = "binomial", data = gdp_rightsbased)
+itq_glm
+
+summary(itq_turf_glm)
+
+```
+
+###Larger ISSCAAP Cat
+```{r}
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf, SpeciesCat) 
+
+fisheries_recent_generousturf_1 <- fisheries_recent %>%
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+
+fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
+
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_turf_i_mc <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "1",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "0"
+    ))%>%
+  mutate(MainCat = case_when(
+    SpeciesCat == 11 | SpeciesCat == 13 ~ "1",
+    SpeciesCat == 22 | SpeciesCat == 23 | SpeciesCat == 24 ~ "2",
+    SpeciesCat == 31 | SpeciesCat == 32 | SpeciesCat == 33 | SpeciesCat == 34 | SpeciesCat     == 35 | SpeciesCat == 37 ~ "3",
+    SpeciesCat == 42 | SpeciesCat == 43 | SpeciesCat == 44 | SpeciesCat == 45 | SpeciesCat      == 47 ~ "4",
+    SpeciesCat == 52 | SpeciesCat == 53 | SpeciesCat ==54 |  SpeciesCat == 55 | SpeciesCat     == 56 | SpeciesCat == 57 | SpeciesCat == 58 ~ "5",
+    SpeciesCat == 74 | SpeciesCat == 76 | SpeciesCat == 77 ~ "7"
+  )) %>%
+  select(Country, SciName, MainCat, rightsbased) %>%
+  filter(MainCat != "NA")
+
+
+gdp_all <- read_excel("data/un_gdp_2016.xls")
+
+gdp <- gdp_all %>%
+  select(Country, gdp_center) %>%
+  filter( gdp_center != "NA") 
+
+join_gdp_turf_i_mc <- merge(gdp, fisheries_recent_turf_i_mc, by = c("Country"))
+
+gdp_turf_i_mc <- filter(join_gdp_turf_i_mc, MainCat != "NA" )
+
+gdp_turf_i_mc$MainCat <- factor(gdp_turf_i_mc$MainCat)
+gdp_turf_i_mc$rightsbased <- as.numeric(gdp_turf_i_mc$rightsbased)
+                              
+
+turf_itq_mc_glm <- glm(formula = rightsbased ~ gdp_center + MainCat, family = "binomial", data = gdp_turf_i_mc)
+turf_itq_mc_glm
+
+summary(turf_itq_mc_glm)
+```
+
+
+##Diagnostics
+
+```{r}
+
+##run above chunk to get gdp_rightsbased df not the old csv file that is now archived in data folder
+
+diagnostics <- gdp_rightsbased %>%
+  mutate(management = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    turf == TRUE ~ "2",
+    itq == FALSE | iq == FALSE | ivq == FALSE | turf == FALSE ~ "0"
+    )) %>%
+  select(Country, gdp_center, SpeciesCat, management)
+
+#diagnostics wont run with non-numeric?
+diagnostics$SpeciesCat <- as.numeric(diagnostics$SpeciesCat)
+diagnostics$management <- as.numeric(diagnostics$management)
+
+#2= gdp; 4= turf; 5 = SpeciesCat; 23 = itq; 24= ivq; 25 = iq; 26= binary rights based
+pairs(diagnostics[2:4]) 
+
+#pearson's r correlations
+cor(diagnostics[2:4]) 
+
+#run chi square?
+
+
+```
+
+####Bar Chart: Coefficient Species Category
+
+###MPA New Costello Data
+These MPAs are at least partitally no-take but some of the percentages are very low
+
+```{r}
+
+mpa_costello_data <- read_excel("data/mpa_costello_data.xlsx")
+
+##Choose only MPAs that have some no take
+mpa_no_take <- mpa_costello_data %>%
+  filter(no_take == "1")
+
+mpa_no_take_10 <- top_n(mpa_no_take, 10, mpa_area)
+mpa_no_take_10
+
+##all countries
+mpa_no_take_10$Country <- factor(mpa_no_take_10$Country, levels = mpa_no_take_10$Country[order(mpa_no_take_10$mpa_area)])
+
+ggplot(mpa_no_take_10, aes(x = Country, y = mpa_area)) +
+  geom_bar(stat = "identity")+
+  ggtitle("Top 10 Countries with No Take MPAs")+
+  coord_flip()+
+  theme_bw()+
+  ylab("Area km2")
+
+```
+
+These are the countries with the highest area of no-take
+```{r}
+mpa_costello_data <- read_excel("data/mpa_costello_data.xlsx")
+
+##Choose only MPAs that have some no take
+mpa_no_take <- mpa_costello_data %>%
+  filter(no_take == "1")
+
+mpa_no_take_area_10 <- top_n(mpa_no_take, 10, no_take_area)
+mpa_no_take_area_10
+
+##all countries
+mpa_no_take_area_10$Country <- factor(mpa_no_take_area_10$Country, levels = mpa_no_take_area_10$Country[order(mpa_no_take_area_10$no_take_area)])
+
+ggplot(mpa_no_take_area_10, aes(x = Country, y = no_take_area)) +
+  geom_bar(stat = "identity")+
+  ggtitle("Top 10 Countries with Largest No Take Areas")+
+  coord_flip()+
+  theme_bw()+
+  ylab("Area km2")
+
+```
+
+```{r}
+#load in DiscoverTURFs data
+d_turfs <- read_excel("data/DiscoverTURFs_simple.xlsx")
+edf_turf <- read_excel("data/EDF_TURF_data.xlsx")
+edf_turf_simple <- select(edf_turf, "country", "start_date", "SciName", "turf")
+
+colnames(edf_turf_simple) <- c("Country", "programstart", "SciName", "turf")
+
+turfs_edf_dt <- join(edf_turf_simple, d_turfs, by = c("Country", "SciName"), type = "full")
+
+#write.csv(turfs_edf_dt, file = "turfs_edf_dt.csv")
+
+```
 
 
