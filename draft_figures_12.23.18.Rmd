@@ -46,6 +46,22 @@ fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
 fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
 fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 
+a = fisheries_recent %>% 
+  filter(Dbase == "RAM") %>% 
+  ggplot(aes(BvBmsy, FvFmsy, color =Dbase )) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(0,4), ylim = c(0,4))
+
+
+timeseries_values_views %>% 
+  filter(year == 2016) %>% 
+  select(BdivBmsypref,UdivUmsypref) %>% 
+  na.omit() %>% 
+  nrow()
+  ggplot(aes(BdivBmsypref,UdivUmsypref)) + 
+  geom_point()
+  
+  a
 ```
 
 
@@ -63,17 +79,7 @@ fisheries_KOBE_ram <- fisheries_recent %>%
 fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "0"]<- "No ITQ"
 fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "1"]<- "ITQ"
 
-ggplot(data = fisheries_KOBE_ram, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
-  geom_point()+
-  labs(x = "B/Bmsy", y= "F/Fsmy") +
-  theme_minimal()+
-  theme(legend.title=element_blank())+
-  ylim(0, 2.5)+
-  xlim(0, 2.5)+
-  geom_hline(aes(yintercept=1))+
-  geom_vline(aes(xintercept=1))+
-  ggtitle("KOBE Plot: RAM only Fisheries")
-
+s
 ```
 
 
