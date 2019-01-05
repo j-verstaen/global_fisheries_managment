@@ -24,8 +24,8 @@ suppressPackageStartupMessages({
   library(plotly)
   library(base)
   library(rio)
-  library(plyr)
   library(knitr)
+  library(doBy)
 })
 ```
 
@@ -52,16 +52,43 @@ a = fisheries_recent %>%
   geom_point() + 
   coord_cartesian(xlim = c(0,4), ylim = c(0,4))
 
+b = fisheries_recent %>% 
+  ggplot(aes(BvBmsy, FvFmsy, color =Dbase )) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(0,4), ylim = c(0,4))
 
-timeseries_values_views %>% 
-  filter(year == 2016) %>% 
-  select(BdivBmsypref,UdivUmsypref) %>% 
-  na.omit() %>% 
-  nrow()
-  ggplot(aes(BdivBmsypref,UdivUmsypref)) + 
-  geom_point()
+
+#timeseries_values_views%>% 
+#  filter(year == 2016) %>% 
+#  select(BdivBmsypref,UdivUmsypref) %>% 
+#  na.omit() %>% 
+#  nrow()  
+#  ggplot(aes(BdivBmsypref,UdivUmsypref)) + 
+#  geom_point()
   
-  a
+a
+  
+b
+  
+
+#median F and B values
+dbase_median <- fisheries_recent %>% 
+  select(BvBmsy,FvFmsy, Dbase) %>%
+    group_by(Dbase) %>%
+    na.omit() %>%
+    summarise_each(funs(median)) %>% 
+    ggplot()+
+    geom_point(aes(x=BvBmsy, y=FvFmsy, colour=Dbase))
+
+
+fisheries_median <-fisheries_recent %>% 
+  select(BvBmsy,FvFmsy) %>%
+    na.omit() %>%
+    summarise_each(funs(median)) %>% 
+    ggplot()+
+    geom_point(aes(x=BvBmsy, y=FvFmsy))
+
+  
 ```
 
 
@@ -79,7 +106,19 @@ fisheries_KOBE_ram <- fisheries_recent %>%
 fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "0"]<- "No ITQ"
 fisheries_KOBE_ram$rightsbased[fisheries_KOBE_ram$rightsbased == "1"]<- "ITQ"
 
-s
+F_B_graph_ram <- ggplot(data = fisheries_KOBE_ram, aes( x=BvBmsy, y=FvFmsy, colour= rightsbased, size = Catch ))+
+  geom_point()+
+  labs(x = "B/Bmsy", y= "F/Fsmy") +
+  theme_minimal()+
+  theme(legend.title=element_blank())+
+  ylim(0, 2.5)+
+  xlim(0, 2.5)+
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  ggtitle("KOBE Plot:  RAM Fisheries")
+
+F_B_graph_ram
+
 ```
 
 
@@ -107,6 +146,18 @@ F_B_graph <- ggplot(data = fisheries_KOBE, aes( x=BvBmsy, y=FvFmsy, colour= righ
   geom_hline(aes(yintercept=1))+
   geom_vline(aes(xintercept=1))+
   ggtitle("KOBE Plot:  All Fisheries")
+
+F_B_graph
+
+itq_median <- fisheries_KOBE %>% 
+  select(BvBmsy,FvFmsy, rightsbased) %>%
+  group_by(rightsbased) %>%
+    na.omit() %>%
+    summarise_each(funs(median)) %>% 
+    ggplot()+
+    geom_point(aes(x=BvBmsy, y=FvFmsy, colour = rightsbased))+
+  ggtitle("Medians for ITQ and non ITQ fisheries")
+itq_median
 
 ```
 
@@ -141,10 +192,10 @@ sum(no_itq_catch$Catch, na.rm = TRUE)
 
 ```
 
-turf = 174,065.5 = 0.248% of total catch
-itq = 3,874,741 = 5.5% of total catch
-no itq = 66,155,763 = 94.23% of total catch
-Total = 70,204,569.5
+turf = 234000 = 0.29% of total catch
+itq = 4093520 = 5.1% of total catch
+
+Global Catch Estimate = 80 million
 
 ## Total Catch: A more generous estimation of Turf catch
 
@@ -159,7 +210,7 @@ turfs_edf_dt <- read_csv("data/turfs_edf_dt.csv")
 
 ```{r}
 
-fisheries_recent_generousturf_1 <- select(fisheries_recent, Country, assess_id_short, Year.x,SciName, Catch, itq, ivq, iq)
+fisheries_recent_generousturf_1 <- select(fisheries_recent, Country, assess_id_short, Year,SciName, Catch, itq, ivq, iq)
 
 #merge the most recent data on each fishery with turf data
 fisheries_recent_generousturf <- merge(fisheries_recent_generousturf_1, turfs_edf_dt, by = c("Country", "SciName") , all.x = "TRUE")
@@ -195,11 +246,10 @@ sum(no_itq_generous$Catch, na.rm = TRUE)
 
 Generous Turf Catch Estimates:
 
-turf = 1,643,571 -> 2.3% global catch
-itq= 3,874,741 -> 5.5% global catch
-no itq =  64,815,841 -> 92.1% global catch
+turf = 1246549 -> 1.5% global catch
+itq= 4093520 -> 5.1% global catch
 
-Total: 70,334,153
+Global Estimate = 80,000,000
 
 ##Logit regressions
 
@@ -216,7 +266,7 @@ fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
 fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 
 fisheries_recent_generousturf_1 <- fisheries_recent %>%
-  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+  select(Country, assess_id_short, Year, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
 
 colnames(fisheries_recent_generousturf_1) <- c("Country", "assess_id_short", "Year", "CommName", "Biomass", "Catch", "BvBmsy", "FvFmsy", "Dbase", "SciName", "IdLevel", "SpeciesCat", "Profits", "MSY", "Price", "g", "k", "c", "phi", "itq", "ivq", "iq")
 fisheries_recent_generousturf <- merge(fisheries_recent_generousturf_1, turfs_edf_dt, by = c("Country", "SciName") , all.x = "TRUE")
@@ -255,7 +305,6 @@ summary(itq_glm)
 **The intercepts for the species categories are not coming up as significant at all. Recategorized fish according to the next level up for the ISSCAAP codes. Reclassifications are below: **
 
 Larger Categories for ISSCAAP Codes
-11,13 = freshwater fish = 1
 22-24 = diadromous fishes = 2
 31-35, 37 = marine fishes = 3
 42-45,47 = crustaceans = 4
@@ -275,7 +324,7 @@ fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
 
 fisheries_recent_generousturf_1 <- fisheries_recent %>%
-  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+  select(Country, assess_id_short, Year, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
 
 colnames(fisheries_recent_generousturf_1) <- c("Country", "assess_id_short", "Year", "CommName", "Biomass", "Catch", "BvBmsy", "FvFmsy", "Dbase", "SciName", "IdLevel", "SpeciesCat", "Profits", "MSY", "Price", "g", "k", "c", "phi", "itq", "ivq", "iq")
 
@@ -292,7 +341,6 @@ fisheries_recent_regression_1 <- fisheries_recent_generousturf %>%
     itq == FALSE | iq == FALSE | ivq == FALSE ~ "0"
     )) %>%
   mutate(MainCat = case_when(
-    SpeciesCat == 11 | SpeciesCat == 13 ~ "1",
     SpeciesCat == 22 | SpeciesCat == 23 | SpeciesCat == 24 ~ "2",
     SpeciesCat == 31 | SpeciesCat == 32 | SpeciesCat == 33 | SpeciesCat == 34 | SpeciesCat     == 35 | SpeciesCat == 37 ~ "3",
     SpeciesCat == 42 | SpeciesCat == 43 | SpeciesCat == 44 | SpeciesCat == 45 | SpeciesCat      == 47 ~ "4",
@@ -338,7 +386,7 @@ fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
 fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 
 fisheries_recent_generousturf_1 <- fisheries_recent %>%
-  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+  select(Country, assess_id_short, Year, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
 
 colnames(fisheries_recent_generousturf_1) <- c("Country", "assess_id_short", "Year", "CommName", "Biomass", "Catch", "BvBmsy", "FvFmsy", "Dbase", "SciName", "IdLevel", "SpeciesCat", "Profits", "MSY", "Price", "g", "k", "c", "phi", "itq", "ivq", "iq")
 
@@ -379,7 +427,6 @@ summary(itq_turf_glm)
 **The intercepts for the species categories are not coming up as significant at all. Recategorized fish according to the next level up for the ISSCAAP codes. Reclassifications are below: **
 
 Larger Categories for ISSCAAP Codes
-11,13 = freshwater fish = 1
 22-24 = diadromous fishes = 2
 31-35, 37 = marine fishes = 3
 42-45,47 = crustaceans = 4
@@ -399,7 +446,7 @@ fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
 turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
 
 fisheries_recent_generousturf_1 <- fisheries_recent %>%
-  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+  select(Country, assess_id_short, Year, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
 
 colnames(fisheries_recent_generousturf_1) <- c("Country", "assess_id_short", "Year", "CommName", "Biomass", "Catch", "BvBmsy", "FvFmsy", "Dbase", "SciName", "IdLevel", "SpeciesCat", "Profits", "MSY", "Price", "g", "k", "c", "phi", "itq", "ivq", "iq")
 
@@ -416,7 +463,6 @@ fisheries_recent_turf_i_mc <- fisheries_recent_generousturf %>%
     itq == TRUE | iq == TRUE | ivq == TRUE ~ "0"
     ))%>%
   mutate(MainCat = case_when(
-    SpeciesCat == 11 | SpeciesCat == 13 ~ "1",
     SpeciesCat == 22 | SpeciesCat == 23 | SpeciesCat == 24 ~ "2",
     SpeciesCat == 31 | SpeciesCat == 32 | SpeciesCat == 33 | SpeciesCat == 34 | SpeciesCat     == 35 | SpeciesCat == 37 ~ "3",
     SpeciesCat == 42 | SpeciesCat == 43 | SpeciesCat == 44 | SpeciesCat == 45 | SpeciesCat      == 47 ~ "4",

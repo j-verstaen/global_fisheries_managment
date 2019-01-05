@@ -1331,6 +1331,7 @@ F_B_graph <- ggplot(data = fisheries_KOBE, aes( x=BvBmsy, y=FvFmsy, colour= righ
 ```
 
 LOOK AT THIS TOMORROW. ITQ AND NO ITQ CATCH PROJECTIONS SHOULD BE THE SAME, USING SAME DATA, BUT THEY ARE NOT. WTF?
+- solved
 
 ##Total Catches in most recent year of ITQ, no ITQ, and Turfs
 ```{r}
@@ -1769,5 +1770,119 @@ turfs_edf_dt <- join(edf_turf_simple, d_turfs, by = c("Country", "SciName"), typ
 #write.csv(turfs_edf_dt, file = "turfs_edf_dt.csv")
 
 ```
+
+#######################
+#######################
+1/2/2019
+
+Chris:
+1) The Kobe plot has a strange upward sloping line and a strange downward sloping line.  I wonder if you might be using the wrong FvFmsy or BvBmsy fields from RAM?  Dan - could you look at her code?
+
+2) The % of catch from ITQ (which you get as 5%) seems very low.  I think it should be around 25%.  Please re-check it.  Peruvian anchoveta alone should be around 9%.
+
+Dan:
+Almost looks like it’s plotting a control rule? Ohhhh you know what it might be? For the projections in te upside For the ITQ stocks it applies the MEY control rule to EQ, which would result in shutting down fishing for the low b values. There is some nuance in making sure that you’re getting status estimates not projections. Looked at the code, Juliette where is the .csv with the recent status estimates coming from? I don’t see any code to generate it in the repo. I’ll take a closer look tonight or tomorrow. But I’d bet that you’re pulling projections with a control rule applies instead of assessments
+
+
+
+##Total Catch: Most recent year for each fishery 
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+#assuming that when no data is present for itqs/turf that means there are none
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+
+fisheries_turf_itqs_1 <-unique( fisheries_recent[ , 1:23 ] )
+
+fisheries_turf_itqs <- fisheries_turf_itqs_1 %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"
+    )) 
+
+
+turfs_catch <- filter(fisheries_turf_itqs, rightsbased == "2")
+itq_catch <- filter(fisheries_turf_itqs, rightsbased == "1")
+no_itq_catch <- filter(fisheries_turf_itqs, rightsbased == "0")
+
+sum(turfs_catch$Catch, na.rm = TRUE)
+
+sum(itq_catch$Catch, na.rm = TRUE)
+
+sum(no_itq_catch$Catch, na.rm = TRUE)
+
+```
+
+turf = 174,065.5 = 0.248% of total catch
+itq = 3,874,741 = 5.5% of total catch
+no itq = 66,155,763 = 94.23% of total catch
+Total = 70,204,569.5
+
+## Total Catch: A more generous estimation of Turf catch
+
+```{r message =FALSE}
+
+#load data with info only on most recent year for each fishery (includes upside, updated with RAMs, corbette itq/turf data)
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+#turf data from edf and discover turfs
+turfs_edf_dt <- read_csv("data/turfs_edf_dt.csv")
+```
+
+```{r}
+
+fisheries_recent_generousturf_1 <- select(fisheries_recent, Country, assess_id_short, Year.x,SciName, Catch, itq, ivq, iq)
+
+#merge the most recent data on each fishery with turf data
+fisheries_recent_generousturf <- merge(fisheries_recent_generousturf_1, turfs_edf_dt, by = c("Country", "SciName") , all.x = "TRUE")
+
+#assuming that when no data is present for itqs/turf that means there are none
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1"
+    ))
+
+#create dfs for turf, itq, and no itq fisheries to calculate the sum of each
+#NOTE to rememeber: the data from these fisheries are the most recent numbers we have. they are not all in the same year 
+
+turfs_generous <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "2")
+itq_generous <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "1")
+no_itq_generous <- filter(fisheries_recent_generousturf_rightsbased, rightsbased == "0")
+
+sum(turfs_generous$Catch, na.rm = TRUE)
+
+sum(itq_generous$Catch, na.rm = TRUE)
+
+sum(no_itq_generous$Catch, na.rm = TRUE)
+
+```
+
+
+Generous Turf Catch Estimates:
+
+turf = 1,643,571 -> 2.3% global catch
+itq= 3,874,741 -> 5.5% global catch
+no itq =  64,815,841 -> 92.1% global catch
+
+Total: 70,334,153
+
+
+
+
+
+
+
 
 

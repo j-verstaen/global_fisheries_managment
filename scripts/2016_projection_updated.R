@@ -13,7 +13,7 @@
 
 Countries_ITQ <- read_excel("data/Countries_ITQ.xlsx")
 
-#new dataframw with just most recent year of data for each fishery
+#new dataframe with just most recent year of data for each fishery
 corbette_recent <- Countries_ITQ %>% 
   group_by(assess_id_short) %>% 
   filter(year == max(year))
