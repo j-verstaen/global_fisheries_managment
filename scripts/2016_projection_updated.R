@@ -10,8 +10,9 @@
   library(plotly)
   library(rio)
   library(data.table)
-
-Countries_ITQ <- read_excel("data/Countries_ITQ.xlsx")
+  library(here)
+  
+Countries_ITQ <- read_excel(here("data","Countries_ITQ.xlsx"))
 
 #new dataframw with just most recent year of data for each fishery
 corbette_recent <- Countries_ITQ %>% 
@@ -35,21 +36,27 @@ fisheries_with_itq <- corbette_fisheries %>%
   filter(itq == "TRUE" | iq == "TRUE" | ivq == "TRUE" | turf == "TRUE" )
 #Load Data
 #Upside data
-projection_data <- readRDS("data/projection_data.rds") %>% 
+projection_data <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic") %>% 
   group_by(IdOrig) %>% 
   dplyr::mutate(max_year = max(Year)) %>% 
   filter(max_year == 2012)
 
+test <- projection_data %>% 
+  filter(Year == max_year) %>% 
+  group_by(CatchShare, Dbase) %>% 
+  summarise(total_catch = sum(Catch))
+
 
 #RAM
-load("data/DBdata-model_fits_included.RData")
+load(here("data","DBdata-model_fits_included.RData"))
 
 
 #RAM Data Tiddying
 ram <- timeseries_values_views %>%
   select("stocklong", "year", "TBbest", "TCbest", "BdivBmsypref", "UdivUmsypref") %>%
   add_column("RAM")
+
 
 colnames(ram) <- c( "CommName", "Year", "Biomass", "Catch", "BvBmsy", "FvFmsy", "DBase")
 
@@ -100,6 +107,9 @@ fisheries_recent_1 <- recent_pre2016 %>%
 fisheries_recent <- fisheries_recent_1 %>%
   select(Country, assess_id_short, Year, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq, turf)
 
+ b <- fisheries_recent %>% 
+   filter(!is.na(itq) | !is.na(ivq) | !is.na(iq))
+
 a = fisheries_recent %>% 
   ggplot(aes(BvBmsy, FvFmsy, color =Dbase )) + 
   geom_point() + 
@@ -112,5 +122,5 @@ a = fisheries_recent %>%
 
 
 #write dataframe to csv file
-fisheries_recent <- write.csv(fisheries_recent, file = "fisheries_recent.csv")
+write.csv(fisheries_recent, file = here("processed_data","fisheries_recent.csv"))
 

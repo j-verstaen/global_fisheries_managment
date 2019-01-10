@@ -1,0 +1,11 @@
+---
+title: "paper-figures"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+B/Bmsy by size class over time
