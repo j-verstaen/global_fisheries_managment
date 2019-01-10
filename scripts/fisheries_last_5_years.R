@@ -89,16 +89,13 @@ ITQ_projection_merge <- full_join(unite_projection, fisheries_with_itq %>% selec
 
 
 ##filter out the last 5 years of data
-recent_pre2016_5years <- ITQ_projection_merge %>%
+fisheries_recent_5years_1 <- ITQ_projection_merge %>%
   dplyr::mutate(final_2year = (final_year-1)) %>%
   dplyr::mutate(final_3year = (final_year-2)) %>%
   dplyr::mutate(final_4year = (final_year-3)) %>%
   dplyr::mutate(final_5year = (final_year-4)) %>%
-  filter(Year <= final_year | Year <= final_2year | Year <= final_3year | Year <= final_4year | Year <= final_5year)
-
-#keep only info on most recent year for each fishery  
-fisheries_recent_5years_1 <- recent_pre2016_5years %>% 
-  filter(Year == final_year & final_year > 2007)
+  filter(Year <= final_year | Year <= final_2year | Year <= final_3year | Year <= final_4year | Year <= final_5year) %>%
+  filter(Year > 2007)
 
 
 #select the columns we are interested in
@@ -107,7 +104,7 @@ fisheries_recent_5years <- fisheries_recent_5years_1 %>%
   filter(SpeciesCat.x != "11")
 
 #write dataframe to csv file
-#fisheries_recent_5years <- write.csv(fisheries_recent_5years, file = "fisheries_recent_5years.csv")
+fisheries_recent_5years <- write.csv(fisheries_recent_5years, file = "fisheries_recent_5years.csv")
 
 
 

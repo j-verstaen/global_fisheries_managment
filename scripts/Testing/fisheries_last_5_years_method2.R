@@ -87,6 +87,7 @@ fishery_itq_simple <- fisheries_with_itq %>%
 
 ITQ_projection_merge <- full_join(unite_projection, fisheries_with_itq %>% select(-Year), by = c("assess_id_short"))
 
+#once made seperate columns for each 5 years need to only keep the ones where the "final" year matches the Year
 
 ##filter out the last 5 years of data
 recent_pre2016_5years <- ITQ_projection_merge %>%
@@ -94,7 +95,7 @@ recent_pre2016_5years <- ITQ_projection_merge %>%
   dplyr::mutate(final_3year = (final_year-2)) %>%
   dplyr::mutate(final_4year = (final_year-3)) %>%
   dplyr::mutate(final_5year = (final_year-4)) %>%
-  filter(Year <= final_year | Year <= final_2year | Year <= final_3year | Year <= final_4year | Year <= final_5year)
+  filter(Year <= final_year | Year <= final_2year | Year <= final_3year | Year <= final_4year | Year <= final_5year) %>%
 
 #keep only info on most recent year for each fishery  
 fisheries_recent_5years_1 <- recent_pre2016_5years %>% 

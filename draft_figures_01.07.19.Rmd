@@ -199,8 +199,88 @@ Global Catch Estimate = 80 million
 
 ##Percent Catch ITQ over last 5 Years
 
+```{r}
+# by assess id
+fisheries_recent_5years <- read_csv("data/fisheries_recent_5years.csv")
+
+#assuming that when no data is present for itqs/turf that means there are none
+fisheries_recent_5years$turf[is.na(fisheries_recent_5years$turf)] <- "FALSE"
+fisheries_recent_5years$itq[is.na(fisheries_recent_5years$itq)] <- "FALSE"
+fisheries_recent_5years$ivq[is.na(fisheries_recent_5years$ivq)] <- "FALSE"
+fisheries_recent_5years$iq[is.na(fisheries_recent_5years$iq)] <- "FALSE"
 
 
+###creating new column for management; also merging country and the name of species in order to have a way of IDing the fishery to merge with averages in next code peiece
+fisheries_turf_itqs_5years_1 <- fisheries_recent_5years %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"
+    ))
+
+##get average catch over last 5 years for each fishery
+mean_5years <- aggregate(fisheries_turf_itqs_5years_1[, 7], list(fisheries_turf_itqs_5years_1$assess_id_short), mean)
+
+colnames(mean_5years) <- c("assess_id_short", "FiveYearCatchAvg")
+
+fisheries_turf_itqs_5years_2 <- select(fisheries_turf_itqs_5years_1, "assess_id_short", "rightsbased", "CommName")
+
+fisheries_turf_itqs_5years <-  merge(fisheries_turf_itqs_5years_2, mean_5years, by.x = "assess_id_short")
+
+turfs_catch <- filter(fisheries_turf_itqs_5years, rightsbased == "2")
+itq_catch <- filter(fisheries_turf_itqs_5years, rightsbased == "1")
+no_itq_catch <- filter(fisheries_turf_itqs_5years, rightsbased == "0")
+
+sum(turfs_catch$FiveYearCatchAvg, na.rm = TRUE)
+
+sum(itq_catch$FiveYearCatchAvg, na.rm = TRUE)
+
+sum(no_itq_catch$FiveYearCatchAvg, na.rm = TRUE)
+
+###########
+#by common name
+# end up with same number by common name becuase the fisheries without more infor (just common name, and location don't have ITQs)
+
+fisheries_recent_5years <- read_csv("data/fisheries_recent_5years.csv")
+
+#assuming that when no data is present for itqs/turf that means there are none
+fisheries_recent_5years$turf[is.na(fisheries_recent_5years$turf)] <- "FALSE"
+fisheries_recent_5years$itq[is.na(fisheries_recent_5years$itq)] <- "FALSE"
+fisheries_recent_5years$ivq[is.na(fisheries_recent_5years$ivq)] <- "FALSE"
+fisheries_recent_5years$iq[is.na(fisheries_recent_5years$iq)] <- "FALSE"
+
+
+###creating new column for management; also merging country and the name of species in order to have a way of IDing the fishery to merge with averages in next code peiece
+fisheries_turf_itqs_5years_1 <- fisheries_recent_5years %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "2",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE & iq == FALSE & ivq == FALSE ~ "0"
+    ))
+
+##get average catch over last 5 years for each fishery
+mean_5years <- aggregate(fisheries_turf_itqs_5years_1[, 9], list(fisheries_turf_itqs_5years_1$CommName), mean)
+
+colnames(mean_5years) <- c("CommName", "FiveYearCatchAvg")
+
+fisheries_turf_itqs_5years_2 <- select(fisheries_turf_itqs_5years_1, "assess_id_short", "rightsbased", "CommName")
+
+fisheries_turf_itqs_5years <-  merge(fisheries_turf_itqs_5years_2, mean_5years, by.x = "CommName")
+
+turfs_catch <- filter(fisheries_turf_itqs_5years, rightsbased == "2")
+itq_catch <- filter(fisheries_turf_itqs_5years, rightsbased == "1")
+no_itq_catch <- filter(fisheries_turf_itqs_5years, rightsbased == "0")
+
+sum(turfs_catch$FiveYearCatchAvg, na.rm = TRUE)
+
+sum(itq_catch$FiveYearCatchAvg, na.rm = TRUE)
+
+sum(no_itq_catch$FiveYearCatchAvg, na.rm = TRUE)
+
+```
+Turf: 234,000
+ITQ: 4,093,520 = 5.1%
+3,200,000 peru anchovies
 
 
 ##Percent Catch ITQ over last 10 Years
@@ -241,7 +321,24 @@ sum(itq_catch$TenYearCatchAvg, na.rm = TRUE)
 
 sum(no_itq_catch$TenYearCatchAvg, na.rm = TRUE)
 
+##by common name instead of assess_id ; get same numbers
+##get average catch over last 5 years for each fishery
+mean_10years <- aggregate(fisheries_turf_itqs_10years_1[, 7], list(fisheries_turf_itqs_10years_1$CommName), mean)
+colnames(mean_10years) <- c("CommName", "TenYearCatchAvg")
 
+fisheries_turf_itqs_10years_2 <- select(fisheries_turf_itqs_10years_1, "assess_id_short", "rightsbased", "CommName")
+
+fisheries_turf_itqs_10years <-  merge(fisheries_turf_itqs_10years_2, mean_10years, by.x = "CommName")
+
+turfs_catch <- filter(fisheries_turf_itqs_10years, rightsbased == "2")
+itq_catch <- filter(fisheries_turf_itqs_10years, rightsbased == "1")
+no_itq_catch <- filter(fisheries_turf_itqs_10years, rightsbased == "0")
+
+sum(turfs_catch$TenYearCatchAvg, na.rm = TRUE)
+
+sum(itq_catch$TenYearCatchAvg, na.rm = TRUE)
+
+sum(no_itq_catch$TenYearCatchAvg, na.rm = TRUE)
 ```
 Turf: 234,000
 ITQ: 4,115,210 = 5.1%
