@@ -14,7 +14,7 @@
   
 Countries_ITQ <- read_excel(here("data","Countries_ITQ.xlsx"))
 
-#new dataframw with just most recent year of data for each fishery
+#new dataframe with just most recent year of data for each fishery
 corbette_recent <- Countries_ITQ %>% 
   group_by(assess_id_short) %>% 
   filter(year == max(year))
@@ -105,7 +105,8 @@ fisheries_recent_1 <- recent_pre2016 %>%
   
 #select the columns we are interested in
 fisheries_recent <- fisheries_recent_1 %>%
-  select(Country, assess_id_short, Year, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq, turf)
+  select(Country, assess_id_short, Year, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq, turf) %>%
+  filter(SpeciesCat.x != "11")
 
  b <- fisheries_recent %>% 
    filter(!is.na(itq) | !is.na(ivq) | !is.na(iq))
@@ -115,7 +116,7 @@ a = fisheries_recent %>%
   geom_point() + 
   coord_cartesian(xlim = c(0,4), ylim = c(0,4))
 
-a = fisheries_recent %>% 
+b = fisheries_recent %>% 
   ggplot(aes(BvBmsy, FvFmsy, color =itq )) + 
   geom_point() + 
   coord_cartesian(xlim = c(0,4), ylim = c(0,4))
@@ -123,4 +124,6 @@ a = fisheries_recent %>%
 
 #write dataframe to csv file
 write.csv(fisheries_recent, file = here("processed_data","fisheries_recent.csv"))
+
+
 

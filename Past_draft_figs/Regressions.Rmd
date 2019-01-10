@@ -1,0 +1,188 @@
+---
+title: "Regressions"
+author: "Juliette Verstaen"
+date: "12/21/2018"
+output: pdf_document
+toc: true
+toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include = FALSE }
+
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(tidyr)
+  library(here)
+  library(ggplot2)
+  library(dplyr)
+  library(readxl)
+  library(devtools)
+  library(plotly)
+  library(base)
+  library(rio)
+  library(plyr)
+})
+```
+
+
+##Logit regressions
+
+new UN GDP data, 2016 only
+Scaled GDPs
+Rerun Regressions
+
+###1. itq or turf: probablity of itq = f(ISSCAPP and GDP)
+
+####wrangling
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf, SpeciesCat) 
+
+fisheries_recent_generousturf_1 <- fisheries_recent %>%
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+
+fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
+
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    itq == FALSE | iq == FALSE | ivq == FALSE ~ "0"
+    ))
+
+gdp_all <- read_excel("data/un_gdp_2016.xls")
+
+gdp <- gdp_all %>%
+  select(Country, gdp_center) %>%
+  filter( gdp_center != "NA") 
+
+
+merge_gdp_rightsbased <- merge(gdp, fisheries_recent_generousturf_rightsbased, by = c("Country"))
+
+gdp_rightsbased <- filter(merge_gdp_rightsbased, SpeciesCat != "NA" )
+
+```
+
+### Regression 1
+```{r}
+
+gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
+gdp_rightsbased$rightsbased <- as.numeric(gdp_rightsbased$rightsbased)
+                              
+
+itq_glm <- glm(formula = rightsbased ~ 1, family = "binomial", data = gdp_rightsbased)
+itq_glm
+
+summary(itq_glm)
+```
+
+
+
+###2. Run Turf versus ITQ probably: prob(ITQ). Turf = 1 and ITQ = 0 with the data set that was the turf/itq only one
+
+####Wrangling
+```{r}
+
+fisheries_recent <- read_csv("data/fisheries_recent.csv")
+
+fisheries_recent$itq[is.na(fisheries_recent$itq)] <- "FALSE"
+fisheries_recent$ivq[is.na(fisheries_recent$ivq)] <- "FALSE"
+fisheries_recent$iq[is.na(fisheries_recent$iq)] <- "FALSE"
+fisheries_recent$turf[is.na(fisheries_recent$turf)] <- "FALSE"
+
+turf_itq_isscaap <- read_csv("data/turf_itq_isscaap.csv")
+
+turf_only <- turf_itq_isscaap %>%
+  select(SciName, Country, turf, SpeciesCat) 
+
+fisheries_recent_generousturf_1 <- fisheries_recent %>%
+  select(Country, assess_id_short, Year.x, CommName, Biomass, Catch, BvBmsy, FvFmsy, Dbase, SciName, IdLevel, SpeciesCat.x, Profits, MSY, Price, g, k, c, phi, itq, ivq, iq)
+
+fisheries_recent_generousturf <- merge(turf_only, fisheries_recent_generousturf_1, by = c("Country", "SciName"), all = "TRUE")
+
+fisheries_recent_generousturf$turf[is.na(fisheries_recent_generousturf$turf)] <- "FALSE"
+fisheries_recent_generousturf$itq[is.na(fisheries_recent_generousturf$itq)] <- "FALSE"
+fisheries_recent_generousturf$ivq[is.na(fisheries_recent_generousturf$ivq)] <- "FALSE"
+fisheries_recent_generousturf$iq[is.na(fisheries_recent_generousturf$iq)] <- "FALSE"
+
+fisheries_recent_generousturf_rightsbased <- fisheries_recent_generousturf %>%
+  mutate(rightsbased = case_when(
+    turf == TRUE ~ "1",
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "0"
+    ))
+
+gdp_all <- read_excel("data/un_gdp_2016.xls")
+
+gdp <- gdp_all %>%
+  select(Country, gdp_center) %>%
+  filter( gdp_center != "NA") 
+
+
+join_gdp_rightsbased <- merge(gdp, fisheries_recent_generousturf_rightsbased, by = c("Country"))
+
+gdp_rightsbased <- filter(join_gdp_rightsbased, SpeciesCat != "NA" )
+
+```
+
+####Regression 2
+```{r}
+
+gdp_rightsbased$SpeciesCat <- factor(gdp_rightsbased$SpeciesCat)
+gdp_rightsbased$rightsbased <- as.numeric(gdp_rightsbased$rightsbased)
+                              
+
+itq_turf_glm <- glm(formula = rightsbased ~ gdp_center + SpeciesCat, family = "binomial", data = gdp_rightsbased)
+itq_glm
+
+summary(itq_turf_glm)
+
+```
+
+
+##Diagnostics
+
+```{r}
+
+##run above chunk to get gdp_rightsbased df not the old csv file that is now archived in data folder
+
+diagnostics <- gdp_rightsbased %>%
+  mutate(management = case_when(
+    itq == TRUE | iq == TRUE | ivq == TRUE ~ "1",
+    turf == TRUE ~ "2",
+    itq == FALSE | iq == FALSE | ivq == FALSE | turf == FALSE ~ "0"
+    )) %>%
+  select(Country, gdp_center, SpeciesCat, management)
+
+#diagnostics wont run with non-numeric?
+diagnostics$SpeciesCat <- as.numeric(diagnostics$SpeciesCat)
+diagnostics$management <- as.numeric(diagnostics$management)
+
+#2= gdp; 4= turf; 5 = SpeciesCat; 23 = itq; 24= ivq; 25 = iq; 26= binary rights based
+pairs(diagnostics[2:4]) 
+
+#pearson's r correlations
+cor(diagnostics[2:4]) 
+
+#run chi square?
+
+
+```
