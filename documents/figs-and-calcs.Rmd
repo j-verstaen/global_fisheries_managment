@@ -165,10 +165,14 @@ join_mutate$MainCat <- factor(join_mutate$MainCat)
 downjoin <- caret::downSample(x = select(join_mutate,-CatchShare),
                               y = factor(join_mutate$CatchShare),
                               yname = "CatchShare")
-                              
+downjoin %>% 
+  ggplot(aes(log(MSY),fill = CatchShare)) + 
+  geom_density()
+
+                 
 itq_broad_fit <-
   glm(
-    formula = CatchShare ~ gdp_center + MainCat,
+    formula = CatchShare ~ gdp_center + MainCat + log(MSY),
     family = "binomial",
     data = downjoin
   )
@@ -187,32 +191,17 @@ summary(itq_broad_fit)
 aug_itq_broad_fit <- broom::augment(itq_broad_fit) %>% 
   mutate(pred = predict(itq_broad_fit, type = "response"))
 
-
-aug_itq_broad_fit %>% 
-  ggplot(aes(CatchShare, pred, group = CatchShare)) + 
-  geom_boxplot()
-
-aug_itq_broad_fit %>% 
-  ggplot(aes(gdp_center, pred, color = MainCat)) + 
-  geom_point()
-
-aug_itq_broad_fit %>% 
-  ggplot(aes(MainCat, pred)) + 
-  geom_boxplot()
+orig_itq_broad_fit <- join_mutate %>% 
+  mutate(pred = predict(itq_broad_fit, type = "response", newdata = join_mutate))
 
 
-plot(bayes_itq_broad_fit)
-
-pps = rstanarm::posterior_predict(bayes_itq_broad_fit) %>% 
-  colMeans()
-
-aug_itq_broad_fit <- broom::augment(bayes_itq_broad_fit) %>% 
-  mutate(pred = pps)
- 
-
-aug_itq_broad_fit %>% 
-  ggplot(aes(CatchShare, pred, group = CatchShare)) + 
-  geom_boxplot()
+catchshare_pred_plot <- orig_itq_broad_fit %>% 
+  ggplot(aes(pred,CatchShare == 1,fill = CatchShare == 1)) + 
+  ggridges::geom_density_ridges(show.legend = FALSE) +
+  geom_vline(aes(xintercept = 0.5), linetype = 2, color = "red") +
+  labs(y = "Is Catch Share?",
+       x = "Probability of Catch Share",
+       caption = "Classified as catch share if p>0.5") 
 
 aug_itq_broad_fit %>% 
   ggplot(aes(gdp_center, pred, color = MainCat)) + 
@@ -222,6 +211,14 @@ aug_itq_broad_fit %>%
   ggplot(aes(MainCat, pred)) + 
   geom_boxplot()
 
+
+
+catchshare_pred_plot
+
+g <- pROC::roc(CatchShare ~ pred, data = orig_itq_broad_fit)
+
+pROC::ggroc(g) + 
+  geom_abline(aes(intercept = 1, slope =  1), color = "red")
 
 ```
 
