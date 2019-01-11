@@ -123,11 +123,11 @@ join <- left_join(projection_data, gdp, by = "Country")
 
 join$SpeciesCat <- factor(join$SpeciesCat)
                               
-glm <- glm(formula = CatchShare ~ gdp_center + SpeciesCat, family = "binomial", data = join)
-glm
+itq_fit <- glm(formula = CatchShare ~ gdp_center + SpeciesCatName, family = "binomial", data = join)
 
-summary(glm)
+summary(itq_fit)
 
+check <- broom::augment(itq_fit)
 ```
 
 Broader ISSCAAP Categories
@@ -157,14 +157,70 @@ gdp <- gdp_all %>%
   select(Country, gdp_center) %>%
   filter( gdp_center != "NA") 
 
-join_mutate <- left_join(projection_data_mutate, gdp, by = "Country")
+join_mutate <- left_join(projection_data_mutate, gdp, by = "Country") %>% 
+  filter(Year == max(Year))
 
 join_mutate$MainCat <- factor(join_mutate$MainCat)
-                              
-glm_broad <- glm(formula = CatchShare ~ gdp_center + MainCat, family = "binomial", data = join_mutate)
-glm_broad
 
-summary(glm_broad)
+downjoin <- caret::downSample(x = select(join_mutate,-CatchShare),
+                              y = factor(join_mutate$CatchShare),
+                              yname = "CatchShare")
+                              
+itq_broad_fit <-
+  glm(
+    formula = CatchShare ~ gdp_center + MainCat,
+    family = "binomial",
+    data = downjoin
+  )
+
+bayes_itq_broad_fit <-
+  rstanarm::stan_glmer(
+    formula = CatchShare ~ gdp_center + (1|MainCat),
+    family = "binomial",
+    data = downjoin,
+    cores = 4
+  )
+
+
+summary(itq_broad_fit)
+
+aug_itq_broad_fit <- broom::augment(itq_broad_fit) %>% 
+  mutate(pred = predict(itq_broad_fit, type = "response"))
+
+
+aug_itq_broad_fit %>% 
+  ggplot(aes(CatchShare, pred, group = CatchShare)) + 
+  geom_boxplot()
+
+aug_itq_broad_fit %>% 
+  ggplot(aes(gdp_center, pred, color = MainCat)) + 
+  geom_point()
+
+aug_itq_broad_fit %>% 
+  ggplot(aes(MainCat, pred)) + 
+  geom_boxplot()
+
+
+plot(bayes_itq_broad_fit)
+
+pps = rstanarm::posterior_predict(bayes_itq_broad_fit) %>% 
+  colMeans()
+
+aug_itq_broad_fit <- broom::augment(bayes_itq_broad_fit) %>% 
+  mutate(pred = pps)
+ 
+
+aug_itq_broad_fit %>% 
+  ggplot(aes(CatchShare, pred, group = CatchShare)) + 
+  geom_boxplot()
+
+aug_itq_broad_fit %>% 
+  ggplot(aes(gdp_center, pred, color = MainCat)) + 
+  geom_point()
+
+aug_itq_broad_fit %>% 
+  ggplot(aes(MainCat, pred)) + 
+  geom_boxplot()
 
 
 ```
