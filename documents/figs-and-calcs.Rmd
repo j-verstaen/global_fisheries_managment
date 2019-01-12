@@ -28,12 +28,36 @@ A traditional Kobe plot of fishery status. Horizontal axis is $B/Bmsy$ and verti
 
 ```{r fig-1-kobe}
 
-fig_1 = mtcars %>% 
-  ggplot(aes(mpg)) + 
-  geom_histogram()
+projection_data_fig1 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic") %>%
+  group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase != "SOFIA") %>%
+  filter(IdLevel != "Neis")
 
+projection_data_fig1$Dbase[projection_data_fig1$Dbase == "RAM"]<- "Stock Assessed"
+projection_data_fig1$Dbase[projection_data_fig1$Dbase == "FAO"]<- "Stock Not Assessed"
 
-ggsave(here("figures","figure-1.pdf"), fig_1)
+assessed <- projection_data_fig1%>% filter(Dbase == "Stock Assessed")
+notassessed <- projection_data_fig1 %>% filter(Dbase == "Stock Not Assessed")
+
+fig_1 = projection_data_fig1 %>%
+  ggplot(aes(BvBmsy, FvFmsy, colour = Dbase, size =MSY, alpha = MSY)) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(0,3), ylim = c(0,4))+
+  scale_alpha(range = c(0.5, 1))+
+  theme_minimal() +
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  xlab("B/Bmsy")+
+  ylab("F/Fmsy") +
+  ggtitle("Figure 1")+
+  geom_point(data= assessed, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "red", shape = 17) +
+  geom_point(data= notassessed, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "blue", shape = 17)
+  
+fig_1
+
+#ggsave(here("documents/figures","figure-1.pdf"), fig_1)
 
 
 ```
@@ -45,12 +69,88 @@ Global map of countries that manage at least some of their fish catch with ITQs.
 
 ```{r}
 
+library(sf)
+library(ggplot2)
+
+projection_data_fig2 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic") %>%
+  #group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase != "SOFIA") %>%
+  filter(IdLevel != "Neis") %>%
+  select(Country, CatchShare) %>%
+  distinct() %>%
+  filter(CatchShare == "1")
+  
+colnames(projection_data_fig2) <- c("CNTRY_NAME","CatchShare")
+projection_data_fig2[projection_data_fig2 =="USA"] <- "United States"
+projection_data_fig2[projection_data_fig2 =="Russian Federation"] <- "Russia"
+projection_data_fig2$CatchShare <- as.factor(projection_data_fig2$CatchShare)
+
+#alreay in 4326; projection = WGS84
+countries <- st_read(dsn = "countries_shapefiles", layer = "Countries_WGS84")%>%
+  select(CNTRY_NAME)
+#plot(countries)
+
+projection_spatial <- merge(projection_data_fig2, countries, by = "CNTRY_NAME", all.y =TRUE)
+projection_spatial$CatchShare <- as.numeric(projection_spatial$CatchShare)
+projection_spatial[is.na(projection_spatial)] <- 0
+projection_spatial$CatchShare <- as.factor(projection_spatial$CatchShare)
+projection_spatial <- st_as_sf(projection_spatial) 
+
+fig_2 = ggplot() +
+  geom_sf(data= projection_spatial, aes(fill = CatchShare)) +
+  ggtitle("Figure 2")
+  
+
+fig_2
+
+#ggsave(here("documents/figures","figure-2.pdf"), fig_2)
+
 ```
 
 
 ## figure 3  status by RBFM - Kobe, color is RBFM, size is size. Medians RBFM and RBFM-.
 
 A traditional Kobe plot of fishery status for stocks present in the RAM legacy stock assessment database. Horizontal axis is $B/Bmsy$ and vertical axis is $F/Fmsy$. Each point is a single fishery. Size and shading indicates $MSY$ of the fishery and color indicates whether the fishery is managed with RBFM. Medians for RBFM and non-RBFM fisheries are shown as triangles.
+
+```{r}
+
+projection_data_fig3 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic") %>%
+  group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase == "RAM") %>%
+  filter(IdLevel != "Neis")
+
+
+projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "0"]<- "No RBFM"
+projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "1"]<- "RBFM"
+
+rbfm <- projection_data_fig3%>% filter(CatchShare == "RBFM")
+no_rbfm <- projection_data_fig3 %>% filter(CatchShare == "No RBFM")
+
+fig_3 = projection_data_fig3 %>%
+  ggplot(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY)) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(0,3), ylim = c(0,4))+
+  scale_alpha(range = c(0.5, 1))+
+  theme_minimal() +
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  xlab("B/Bmsy")+
+  ylab("F/Fmsy") +
+  ggtitle("Figure 3") +
+  geom_point(data= rbfm, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "red", shape = 17) +
+  geom_point(data= no_rbfm, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "blue", shape = 17)
+  
+fig_3
+
+#ggsave(here("documents/figures","figure-3.pdf"), fig_3)
+```
+
+
+
 
 ## figure 4 bioeconomic figure to show in principle why you get increase in value from RBFM
 
@@ -69,9 +169,9 @@ Simple bioeconomic model represntation illustrating the mechanisms by which RBFM
 
 "and is roughly equivalent to total land and sea production of aquaculture XX"
 
-```{r}
-
-```
+http://www.fao.org/3/i9540en/I9540EN.pdf
+"The total production included 80.0 million tonnes of food fish (USD 231.6 billion)"
+- farmed fish has exceeded wild caught
 
 ## line 53
 
@@ -85,21 +185,144 @@ Famous fisheries such as Alaskan halibut and king crab both experienced derby pe
 
 Using data from (Costello et al., 2016), we can identify which of the fisheries identified by the FAO are currently being managed using ITQs, and from there estimate that xx\% of annual global marine capture comes from fisheries currently managed under ITQs
 
+= 7%
+
+
 ```{r}
+
+projection_data_line65 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic") %>%
+  group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase == "FAO") %>%
+  filter(IdLevel != "Neis")%>%
+  filter(CatchShare == "1")
+
+itq_catch <- sum(projection_data_line65$Catch)
+
+percent_global <- (itq_catch/80000000)*100
+percent_global
+#6.995134
 
 ```
 
 ## line 70 
 
-Based on this calculation, we find that up to xx\% of global catch comes from TURFs and up to XX \% comes from cooperatives. In total, based on best available data to date,  we estimate that somewhere between XXX\% and XXX\% of global wild fish catch comes from all forms of RBFM combined. The What kinds of fisheries make up this RBFM catch? RBFM catches come from XX\% of the countries reporting  fish catches in 2016xx.
+Based on this calculation, we find that up to xx\% (1.7%) of global catch comes from TURFs and up to XX \% (0.55%) comes from cooperatives. In total, based on best available data to date,  we estimate that somewhere between XXX\% (9.8%) and XXX\% (11.1%) of global wild fish catch comes from all forms of RBFM combined. The What kinds of fisheries make up this RBFM catch? RBFM catches come from XX\% of the countries reporting  fish catches in 2016xx.
+
+
 
 ```{r}
 
+library(dplyr)
+
+edf_turf <- read_excel(here("data/EDF_TURF_data.xlsx"))%>%
+  select("Country", "SciName","CatchShare") %>%
+  filter(SciName != "NA")%>%
+  mutate(turf = case_when(CatchShare == 1 ~ TRUE))
+
+#DiscoverTURFs data
+d_turfs <- read_excel(here("data/DiscoverTURFs_simple.xlsx")) %>%
+  select("Country", "SciName", "CatchShare") %>%
+  filter(SciName != "NA")%>%
+    mutate(turf = case_when(CatchShare == 1 ~ TRUE))
+
+projection_data_line70 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic")%>%
+  separate(IdOrig, c("agency", "stock", "t0", "tf", "data_enterer"))%>%
+  unite(assess_id_short, agency, stock, sep = "-") %>%
+  group_by(assess_id_short) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase != "SOFIA") %>%
+  filter(IdLevel != "Neis")
+
+countries_ITQ <- read_excel(here("data/Countries_ITQ.xlsx"))%>%
+  group_by(assess_id_short) %>% 
+  filter(year == max(year))
+
+projection_corb <- left_join(projection_data_line70, countries_ITQ, by = c("assess_id_short")) 
+
+projection_corb_1 <- left_join(projection_corb, d_turfs, by = c("Country", "SciName")) 
+
+projection_corb_2 <- left_join(projection_corb_1, edf_turf, by = c("Country", "SciName")) 
+
+#####Turf math for upper and lower bounds.
+###lower bounds just includes upside/corbette because those have fishery IDs associated with it so sure that those fisheies have turfs, the upper bound incorporates discover turfs and EDF data and links the country/scienfitic name of species to fisheries 
+
+turf_catch_lower <- projection_corb%>%
+  filter(turf == "TRUE")
+sum(turf_catch_lower$Catch)
+#301,000 lower limit
+
+turf_catch_upper <- projection_corb_2%>%
+  filter(turf == "TRUE")
+sum(turf_catch_upper$Catch)
+#1,370,210 upper limit
+#upper bound of total percent of global catch from turf:
+1370210/80000000
+#0.01712763
+
+###cooperative estimates
+coop_catch <- projection_corb%>%
+  filter(coop == "TRUE")
+sum(coop_catch$Catch)
+#443231
+#percent of global catch from coop:
+443231/80000000
+#0.005540387
+
+###all rbfm estimate lower 
+rbfm_catch_low <-projection_corb%>%
+  filter(turf == "TRUE" | itq == "TRUE" | ivq == "TRUE" | iq == "TRUE" | coop == "TRUE")
+sum(rbfm_catch_low$Catch)
+#7863234
+7863234/80000000
+#0.09829043
+
+###all rbfm estimate upper 
+rbfm_catch_up <-projection_corb_2%>%
+  filter(turf == "TRUE" | itq == "TRUE" | ivq == "TRUE" | iq == "TRUE" | coop == "TRUE")
+sum(rbfm_catch_up$Catch)
+#8932444
+8932444/80000000
+#0.1116556
+
+#reported_2016 <- projection_corb_2 %>% filter(Year == "2016")
+
+                      
+
 ```
+
+
 
 ## line 92
 
-What factors drive the adoption of various forms of RBFM? Anecdotal evidence suggests that large, industrial fisheries, often for mobile species are most likely to adopt some form of ITQ, while small-scale artisinal fisheries, often for benthic species, are most likely to adopt a TURF. To test this expectation, we built a dataset of XXX ITQ fisheries and XXX TURF fisheries, and matched them to the fishery classification in \cite{Upside}. This provided us with a dataset of XXX fisheries with the country, species or genus name, and some other ecological and economic characteristics. Conditional on adopting some form of RBFM, our goal was to estimate the likelihood of adopting an ITQ versus a TURF. To do so, we ran a logistic regression with ITQ on the left ha
+What factors drive the adoption of various forms of RBFM? Anecdotal evidence suggests that large, industrial fisheries, often for mobile species are most likely to adopt some form of ITQ, while small-scale artisinal fisheries, often for benthic species, are most likely to adopt a TURF. To test this expectation, we built a dataset of XXX (94) ITQ fisheries and XXX (221) TURF fisheries, and matched them to the fishery classification in \cite{Upside}. This provided us with a dataset of XXX (121) fisheries with the country, species or genus name, and some other ecological and economic characteristics. Conditional on adopting some form of RBFM, our goal was to estimate the likelihood of adopting an ITQ versus a TURF. To do so, we ran a logistic regression with ITQ on the left ha
+
+```{r}
+
+unique(turf_catch_upper$assess_id_short)
+#27 fisheries with turfs
+
+itqs <-projection_corb%>%
+  filter(itq == "TRUE" | ivq == "TRUE" | iq == "TRUE")
+unique(itqs$assess_id_short)
+#94
+
+turf_all_1 <- full_join(edf_turf, d_turfs, by= c("Country", "SciName"))
+projection_turf <- projection_corb %>%
+  filter(turf == "TRUE") %>%
+  select("Country", "SciName")
+
+turf_all <- full_join(projection_turf, turf_all_1, by= c("Country", "SciName"))%>%
+  ungroup()%>%
+  select(Country, SciName) %>%
+  distinct()
+
+#had information of 221 country/species combo for turf
+
+
+```
 
 ## line 94 regression
  put equation and all regression analysis in this section
@@ -109,6 +332,8 @@ $$Pr(ITQ_i) = f(Genus_i, GDP_i, ...) + \epsilon_i$$
 GDP data source: UN website
 Regular ISSCAAP Categories
 ```{r}
+
+### didn't add turf data here yet because using SpeciesCat seems to not work
 
 projection_data <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic")
@@ -139,10 +364,40 @@ Broader ISSCAAP Categories
 
 ```{r}
 
+#upside projection data
 projection_data <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic")
 
-projection_data_mutate <- projection_data  %>%
+#GDP data
+gdp_all <- read_excel(here("data","un_gdp_2016.xls"))
+
+#EDF TURF data
+edf_turf <- read_excel(here("data/EDF_TURF_data.xlsx"))%>%
+  select("Country", "SciName","CatchShare") %>%
+  filter(SciName != "NA")
+
+#DiscoverTURFs data
+d_turfs <- read_excel(here("data/DiscoverTURFs_simple.xlsx")) %>%
+  select("Country", "SciName", "CatchShare") %>%
+  filter(SciName != "NA")
+
+#ISSCAAP Codes
+isscaap <- read_csv(here("data/meta_isscaap_codes.csv"))
+#######################################################
+
+#get turf data to have species category codes
+
+all_turfs <- plyr::join(d_turfs, edf_turf, by= c("Country", "SciName", "CatchShare"), type = "full" ) %>%
+  distinct()
+
+turfs <- plyr::join(all_turfs, isscaap, by= c("SciName")) %>%
+  filter(SciName !="NA")%>%
+  filter(SpeciesCat != "NA")
+
+#add the turf data to upside
+projection_turfs <- merge(projection_data, turfs, by = c("Country", "SciName", "SpeciesCat", "CatchShare"), all = T)
+
+projection_turfs_mutate <- projection_turfs  %>%
   mutate(MainCat = case_when(
     SpeciesCat == 22 | SpeciesCat == 23 | SpeciesCat == 24 ~ "2",
     SpeciesCat == 31 | SpeciesCat == 32 | SpeciesCat == 33 | SpeciesCat == 34 | SpeciesCat     == 35 | SpeciesCat == 37 ~ "3",
@@ -151,14 +406,16 @@ projection_data_mutate <- projection_data  %>%
     SpeciesCat == 74 | SpeciesCat == 76 | SpeciesCat == 77 ~ "7"
   )) 
 
-gdp_all <- read_excel(here("data","un_gdp_2016.xls"))
 
 gdp <- gdp_all %>%
   select(Country, gdp_center) %>%
   filter( gdp_center != "NA") 
 
-join_mutate <- left_join(projection_data_mutate, gdp, by = "Country") %>% 
-  filter(Year == max(Year))
+#question here, will the filter remove out when year is NA? the turf data doesn't have this resolution; edf does have start date though
+join_mutate <- left_join(projection_turfs_mutate, gdp, by = "Country") %>% 
+  group_by(IdOrig) %>%
+  dplyr::mutate(max_year = max(Year)) %>% 
+  filter(max_year== 2012)
 
 join_mutate$MainCat <- factor(join_mutate$MainCat)
 
@@ -229,12 +486,26 @@ pROC::ggroc(g) +
 
 ## line 107 
 
-to all XX non-rbfm fisheries in the (however many fisheries are not catch shares in projection_data)
+to all XX (5360) non-rbfm fisheries in the (however many fisheries are not catch shares in projection_data)
 
 
 ```{r}
 
+projection_data_line107 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic")%>%
+  group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  select(IdOrig, CatchShare)%>%
+  filter(CatchShare == "0") %>%
+  distinct()
+#5360 fisheries without catch share
+
+
+
+
 ```
+
+
 
 As a percentage of fishery potential (estimated maximum sustainable yield, MSY), the breakdown is XXX\% (ITQ) and XXX\% (TURF). The table below presents the results of this extrapolation for the world's top 20 fishing nations.
 
@@ -245,7 +516,29 @@ As a percentage of fishery potential (estimated maximum sustainable yield, MSY),
 
 ## line 118
 
-Using that approach, authors have estimated a benefit of global RBFM between \$XXX Billion and \$XXX Billion per year. see Costello et al. 2016
+Using that approach, authors have estimated a benefit of global RBFM between \$XXX ( $31 billion) Billion and \$XXX ($53 billion) Billion per year. see Costello et al. 2016
+
+1. Costello et al 2016 
+2050
+
+-	RBFM policy applied to just stocks of conservation concern = $31 billion in fisheries profit
+
+-	RBFM policy applied to all stocks = $53 billion in fisheries profit
+
+2. Original Sunken Billions (2009)
+
+- “current annual net benefits from marine capture fisheries are tens of billions of U.S. dollars less than the potential benefits”
+```{r}
+include_graphics("sunkenbillionstable.png")
+```
+
+3. Updated Sunken Billions (2012)
+
+-	economic losses of about $83 billion
+
+
+
+
 
 ## line 120
 
