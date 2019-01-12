@@ -195,13 +195,14 @@ orig_itq_broad_fit <- join_mutate %>%
   mutate(pred = predict(itq_broad_fit, type = "response", newdata = join_mutate))
 
 
-catchshare_pred_plot <- orig_itq_broad_fit %>% 
-  ggplot(aes(pred,CatchShare == 1,fill = CatchShare == 1)) + 
-  ggridges::geom_density_ridges(show.legend = FALSE) +
+catchshare_pred_plot <- orig_itq_broad_fit %>%
+  ggplot(aes(pred, CatchShare == 1, fill = CatchShare == 1)) +
+  ggridges::geom_density_ridges(show.legend = FALSE, alpha = 0.75) +
   geom_vline(aes(xintercept = 0.5), linetype = 2, color = "red") +
   labs(y = "Is Catch Share?",
        x = "Probability of Catch Share",
-       caption = "Classified as catch share if p>0.5") 
+       caption = "Classified as catch share if p>0.5") +
+  scale_x_continuous(limits = c(0, 1), expand = c(0, .01))
 
 aug_itq_broad_fit %>% 
   ggplot(aes(gdp_center, pred, color = MainCat)) + 
@@ -218,7 +219,8 @@ catchshare_pred_plot
 g <- pROC::roc(CatchShare ~ pred, data = orig_itq_broad_fit)
 
 pROC::ggroc(g) + 
-  geom_abline(aes(intercept = 1, slope =  1), color = "red")
+  geom_abline(aes(intercept = 1, slope =  1), color = "red") + 
+  labs(x = "")
 
 ```
 
