@@ -28,13 +28,6 @@ A traditional Kobe plot of fishery status. Horizontal axis is $B/Bmsy$ and verti
 
 ```{r fig-1-kobe}
 
-fig_1 = mtcars %>% 
-  ggplot(aes(mpg)) + 
-  geom_histogram()
-
-
-ggsave(here("figures","figure-1.pdf"), fig_1)
-
 projection_data_fig1 <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic") %>%
   group_by(IdOrig) %>% 
@@ -42,15 +35,30 @@ projection_data_fig1 <- readRDS(here("data","projection_data.rds")) %>%
   filter(Dbase != "SOFIA") %>%
   filter(IdLevel != "Neis")
 
-projection_data_fig1$CatchShare <- as.factor(projection_data_fig1$CatchShare)
+projection_data_fig1$Dbase[projection_data_fig1$Dbase == "RAM"]<- "Stock Assessed"
+projection_data_fig1$Dbase[projection_data_fig1$Dbase == "FAO"]<- "Stock Not Assessed"
+
+assessed <- projection_data_fig1%>% filter(Dbase == "Stock Assessed")
+notassessed <- projection_data_fig1 %>% filter(Dbase == "Stock Not Assessed")
 
 fig_1 = projection_data_fig1 %>%
-  ggplot(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY )) + 
+  ggplot(aes(BvBmsy, FvFmsy, colour = Dbase, size =MSY, alpha = MSY)) + 
   geom_point() + 
   coord_cartesian(xlim = c(0,3), ylim = c(0,4))+
-
-
+  scale_alpha(range = c(0.5, 1))+
+  theme_minimal() +
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  xlab("B/Bmsy")+
+  ylab("F/Fmsy") +
+  ggtitle("Figure 1")+
+  geom_point(data= assessed, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "red", shape = 17) +
+  geom_point(data= notassessed, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "blue", shape = 17)
+  
 fig_1
+
+#ggsave(here("documents/figures","figure-1.pdf"), fig_1)
+
 
 ```
 
@@ -76,6 +84,7 @@ projection_data_fig2 <- readRDS(here("data","projection_data.rds")) %>%
   
 colnames(projection_data_fig2) <- c("CNTRY_NAME","CatchShare")
 projection_data_fig2[projection_data_fig2 =="USA"] <- "United States"
+projection_data_fig2[projection_data_fig2 =="Russian Federation"] <- "Russia"
 projection_data_fig2$CatchShare <- as.factor(projection_data_fig2$CatchShare)
 
 #alreay in 4326; projection = WGS84
@@ -90,10 +99,13 @@ projection_spatial$CatchShare <- as.factor(projection_spatial$CatchShare)
 projection_spatial <- st_as_sf(projection_spatial) 
 
 fig_2 = ggplot() +
-  geom_sf(data= projection_spatial, aes(fill = CatchShare)) 
+  geom_sf(data= projection_spatial, aes(fill = CatchShare)) +
+  ggtitle("Figure 2")
+  
 
 fig_2
 
+#ggsave(here("documents/figures","figure-2.pdf"), fig_2)
 
 ```
 
@@ -112,18 +124,12 @@ projection_data_fig3 <- readRDS(here("data","projection_data.rds")) %>%
   filter(Dbase == "RAM") %>%
   filter(IdLevel != "Neis")
 
-#seperate out with and without catch sahre and then calcualte geo median
-#download either geo_median or Gmedian once updated computer
-median_math <- projection_data_fig3 %>%
-  ungroup() %>%
-  select(BvBmsy,FvFmsy, CatchShare) %>%
- group_by(CatchShare) %>%
-    na.omit() %>%
-    summarize( y=median(BvBmsy,FvFmsy))
-
 
 projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "0"]<- "No RBFM"
 projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "1"]<- "RBFM"
+
+rbfm <- projection_data_fig3%>% filter(CatchShare == "RBFM")
+no_rbfm <- projection_data_fig3 %>% filter(CatchShare == "No RBFM")
 
 fig_3 = projection_data_fig3 %>%
   ggplot(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY)) + 
@@ -135,10 +141,14 @@ fig_3 = projection_data_fig3 %>%
   geom_vline(aes(xintercept=1))+
   xlab("B/Bmsy")+
   ylab("F/Fmsy") +
-  ggtitle("Figure 3")
+  ggtitle("Figure 3") +
+  geom_point(data= rbfm, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "red", shape = 17) +
+  geom_point(data= no_rbfm, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "blue", shape = 17)
+  
   
 fig_3
 
+#ggsave(here("documents/figures","figure-3.pdf"), fig_3)
 ```
 
 
@@ -204,6 +214,8 @@ GDP data source: UN website
 Regular ISSCAAP Categories
 ```{r}
 
+### didn't add turf data here yet because using SpeciesCat seems to not work
+
 projection_data <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic")
 
@@ -241,17 +253,17 @@ projection_data <- readRDS(here("data","projection_data.rds")) %>%
 gdp_all <- read_excel(here("data","un_gdp_2016.xls"))
 
 #EDF TURF data
-edf_turf <- read_excel("data/EDF_TURF_data.xlsx") %>%
+edf_turf <- read_excel(here("data/EDF_TURF_data.xlsx"))%>%
   select("Country", "SciName","CatchShare") %>%
   filter(SciName != "NA")
 
 #DiscoverTURFs data
-d_turfs <- read_excel("data/DiscoverTURFs_simple.xlsx") %>%
+d_turfs <- read_excel(here("data/DiscoverTURFs_simple.xlsx")) %>%
   select("Country", "SciName", "CatchShare") %>%
   filter(SciName != "NA")
 
 #ISSCAAP Codes
-isscaap <- read_csv("data/meta_isscaap_codes.csv")
+isscaap <- read_csv(here("data/meta_isscaap_codes.csv"))
 #######################################################
 
 #get turf data to have species category codes
@@ -275,7 +287,6 @@ projection_turfs_mutate <- projection_turfs  %>%
     SpeciesCat == 74 | SpeciesCat == 76 | SpeciesCat == 77 ~ "7"
   )) 
 
-gdp_all <- read_excel(here("data","un_gdp_2016.xls"))
 
 gdp <- gdp_all %>%
   select(Country, gdp_center) %>%
@@ -283,7 +294,9 @@ gdp <- gdp_all %>%
 
 #question here, will the filter remove out when year is NA? the turf data doesn't have this resolution; edf does have start date though
 join_mutate <- left_join(projection_turfs_mutate, gdp, by = "Country") %>% 
-  filter(Year == max(Year))
+  group_by(IdOrig) %>%
+  dplyr::mutate(max_year = max(Year)) %>% 
+  filter(max_year== 2012)
 
 join_mutate$MainCat <- factor(join_mutate$MainCat)
 
