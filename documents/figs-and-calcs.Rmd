@@ -104,6 +104,7 @@ A traditional Kobe plot of fishery status for stocks present in the RAM legacy s
 
 ```{r}
 
+
 projection_data_fig3 <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic") %>%
   group_by(IdOrig) %>% 
@@ -111,11 +112,18 @@ projection_data_fig3 <- readRDS(here("data","projection_data.rds")) %>%
   filter(Dbase == "RAM") %>%
   filter(IdLevel != "Neis")
 
-#projection_data_fig3$CatchShare <- as.factor(projection_data_fig3$CatchShare)
+#seperate out with and without catch sahre and then calcualte geo median
+#download either geo_median or Gmedian once updated computer
+median_math <- projection_data_fig3 %>%
+  ungroup() %>%
+  select(BvBmsy,FvFmsy, CatchShare) %>%
+ group_by(CatchShare) %>%
+    na.omit() %>%
+    summarize( y=median(BvBmsy,FvFmsy))
+
 
 projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "0"]<- "No RBFM"
 projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "1"]<- "RBFM"
-
 
 fig_3 = projection_data_fig3 %>%
   ggplot(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY)) + 
