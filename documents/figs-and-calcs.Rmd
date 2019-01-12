@@ -36,6 +36,24 @@ fig_1 = mtcars %>%
 ggsave(here("figures","figure-1.pdf"), fig_1)
 
 
+
+projection_data_fig1 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic") %>%
+  group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase != "SOFIA") %>%
+  filter(IdLevel != "Neis")
+
+projection_data_fig1$CatchShare <- as.factor(projection_data_fig1$CatchShare)
+
+fig_1 = projection_data_fig1 %>%
+  ggplot(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY )) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(0,3), ylim = c(0,4))+
+
+
+fig_1
+
 ```
 
 
@@ -44,6 +62,48 @@ ggsave(here("figures","figure-1.pdf"), fig_1)
 Global map of countries that manage at least some of their fish catch with ITQs.
 
 ```{r}
+
+library(sf)
+library(ggplot2)
+#library(tmap)
+
+projection_data_fig2 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic") %>%
+  group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase != "SOFIA") %>%
+  filter(IdLevel != "Neis") %>%
+  select( IdOrig, Country, CatchShare) 
+  
+colnames(projection_data_fig2) <- c("IdOrig", "CNTRY_NAME","CatchShare")
+projection_data_fig2[projection_data_fig2 =="USA"] <- "United States"
+
+
+#alreay in 4326; projection = WGS84
+countries <- st_read(dsn = "countries_shapefiles", layer = "Countries_WGS84")%>%
+  select(CNTRY_NAME)
+plot(countries)
+
+
+projection_spatial <- dplyr::left_join(projection_data_fig2, countries, by = "CNTRY_NAME")
+projection_spatial <- st_as_sf(projection_spatial) 
+
+fig_2 = ggplot() +
+  geom_sf(data= projection_spatial, color = CatchShare) 
+
+
+fig_2
+#plot(projection_spatial)
+
+#tm_shape(countries) +
+ # tm_polygons() +
+  #tm_shape(projection_spatial, colour = CatchShare) 
+  
+
+
+
+
+
 
 ```
 
