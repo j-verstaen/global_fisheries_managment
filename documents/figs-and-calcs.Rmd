@@ -35,8 +35,6 @@ fig_1 = mtcars %>%
 
 ggsave(here("figures","figure-1.pdf"), fig_1)
 
-
-
 projection_data_fig1 <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic") %>%
   group_by(IdOrig) %>% 
@@ -65,7 +63,6 @@ Global map of countries that manage at least some of their fish catch with ITQs.
 
 library(sf)
 library(ggplot2)
-#library(tmap)
 
 projection_data_fig2 <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic") %>%
@@ -104,6 +101,42 @@ fig_2
 ## figure 3  status by RBFM - Kobe, color is RBFM, size is size. Medians RBFM and RBFM-.
 
 A traditional Kobe plot of fishery status for stocks present in the RAM legacy stock assessment database. Horizontal axis is $B/Bmsy$ and vertical axis is $F/Fmsy$. Each point is a single fishery. Size and shading indicates $MSY$ of the fishery and color indicates whether the fishery is managed with RBFM. Medians for RBFM and non-RBFM fisheries are shown as triangles.
+
+```{r}
+
+projection_data_fig3 <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic") %>%
+  group_by(IdOrig) %>% 
+  filter(Year == max(Year))%>%
+  filter(Dbase == "RAM") %>%
+  filter(IdLevel != "Neis")
+
+#projection_data_fig3$CatchShare <- as.factor(projection_data_fig3$CatchShare)
+
+projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "0"]<- "No RBFM"
+projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "1"]<- "RBFM"
+
+
+fig_3 = projection_data_fig3 %>%
+  ggplot(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY)) + 
+  geom_point() + 
+  coord_cartesian(xlim = c(0,3), ylim = c(0,4))+
+  scale_alpha(range = c(0.5, 1))+
+  theme_minimal() +
+  geom_hline(aes(yintercept=1))+
+  geom_vline(aes(xintercept=1))+
+  xlab("B/Bmsy")+
+  ylab("F/Fmsy") +
+  ggtitle("Figure 3")
+  
+fig_3
+
+```
+
+
+
+
+
 
 ## figure 4 bioeconomic figure to show in principle why you get increase in value from RBFM
 
