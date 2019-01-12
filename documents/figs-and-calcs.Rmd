@@ -69,40 +69,33 @@ library(ggplot2)
 
 projection_data_fig2 <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic") %>%
-  group_by(IdOrig) %>% 
+  #group_by(IdOrig) %>% 
   filter(Year == max(Year))%>%
   filter(Dbase != "SOFIA") %>%
   filter(IdLevel != "Neis") %>%
-  select( IdOrig, Country, CatchShare) 
+  select(Country, CatchShare) %>%
+  distinct() %>%
+  filter(CatchShare == "1")
   
-colnames(projection_data_fig2) <- c("IdOrig", "CNTRY_NAME","CatchShare")
+colnames(projection_data_fig2) <- c("CNTRY_NAME","CatchShare")
 projection_data_fig2[projection_data_fig2 =="USA"] <- "United States"
-
+projection_data_fig2$CatchShare <- as.factor(projection_data_fig2$CatchShare)
 
 #alreay in 4326; projection = WGS84
 countries <- st_read(dsn = "countries_shapefiles", layer = "Countries_WGS84")%>%
   select(CNTRY_NAME)
-plot(countries)
+#plot(countries)
 
-
-projection_spatial <- dplyr::left_join(projection_data_fig2, countries, by = "CNTRY_NAME")
+projection_spatial <- merge(projection_data_fig2, countries, by = "CNTRY_NAME", all.y =TRUE)
+projection_spatial$CatchShare <- as.numeric(projection_spatial$CatchShare)
+projection_spatial[is.na(projection_spatial)] <- 0
+projection_spatial$CatchShare <- as.factor(projection_spatial$CatchShare)
 projection_spatial <- st_as_sf(projection_spatial) 
 
 fig_2 = ggplot() +
-  geom_sf(data= projection_spatial, color = CatchShare) 
-
+  geom_sf(data= projection_spatial, aes(fill = CatchShare)) 
 
 fig_2
-#plot(projection_spatial)
-
-#tm_shape(countries) +
- # tm_polygons() +
-  #tm_shape(projection_spatial, colour = CatchShare) 
-  
-
-
-
-
 
 
 ```

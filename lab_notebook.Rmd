@@ -66,7 +66,7 @@ load("data/DBdata-model_fits_included.RData")
 #number_species <- unique(stock$scientificname)
 #341 different species
 
-#cooperative data from "Conservation incentives and collective choices in cooperative fisheries" paper (Ovando et al 2013)
+#cooperative data from "Conservation incentives and elective choices in cooperative fisheries" paper (Ovando et al 2013)
 jc_coop <- read_csv("data/clean_cooperatives_data.csv")
 
 #EDF turf data
@@ -1972,6 +1972,10 @@ sum(no_itq_catch$TenYearCatchAvg, na.rm = TRUE)
 Turf: 234,000
 ITQ: 4,115,210 = 5.1%
 
+1/11/2019
+
+geom_point(stat=, fun.y="medium") +
+    stat_summary(fun.y="medium", geom="point")
 
 
 
