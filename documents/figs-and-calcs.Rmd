@@ -317,7 +317,8 @@ projection_turf <- projection_corb %>%
 turf_all <- full_join(projection_turf, turf_all_1, by= c("Country", "SciName"))%>%
   ungroup()%>%
   select(Country, SciName) %>%
-  distinct()
+  distinct() %>% 
+  left_join(projection_data %>% select(Country, SciName,IdOrig) %>% unique())
 
 #had information of 221 country/species combo for turf
 
@@ -387,24 +388,42 @@ isscaap <- read_csv(here("data/meta_isscaap_codes.csv"))
 
 #get turf data to have species category codes
 
-all_turfs <- plyr::join(d_turfs, edf_turf, by= c("Country", "SciName", "CatchShare"), type = "full" ) %>%
+all_turfs <- dplyr::full_join(d_turfs, edf_turf, by= c("Country", "SciName", "CatchShare")) %>%
   distinct()
 
-turfs <- plyr::join(all_turfs, isscaap, by= c("SciName")) %>%
-  filter(SciName !="NA")%>%
-  filter(SpeciesCat != "NA")
+turfs <-
+  dplyr::left_join(all_turfs, unique(isscaap), by = c("SciName")) %>%
+  filter(SciName != "NA") %>%
+  filter(SpeciesCat != "NA") %>%
+  select(-CatchShare) %>%
+  mutate(turf = 1,
+         Year = 2012)
 
 #add the turf data to upside
-projection_turfs <- merge(projection_data, turfs, by = c("Country", "SciName", "SpeciesCat", "CatchShare"), all = T)
+projection_turfs <- full_join(projection_data, turfs, by = c("Country", "SciName", "SpeciesCat","Year"), all = T) %>% 
+  mutate(turf = ifelse(is.na(turf),0,1)) %>% 
+  mutate(CatchShare = ifelse(turf == 1,2, CatchShare))
 
-projection_turfs_mutate <- projection_turfs  %>%
-  mutate(MainCat = case_when(
-    SpeciesCat == 22 | SpeciesCat == 23 | SpeciesCat == 24 ~ "2",
-    SpeciesCat == 31 | SpeciesCat == 32 | SpeciesCat == 33 | SpeciesCat == 34 | SpeciesCat     == 35 | SpeciesCat == 37 ~ "3",
-    SpeciesCat == 42 | SpeciesCat == 43 | SpeciesCat == 44 | SpeciesCat == 45 | SpeciesCat      == 47 ~ "4",
-    SpeciesCat == 52 | SpeciesCat == 53 | SpeciesCat ==54 |  SpeciesCat == 55 | SpeciesCat     == 56 | SpeciesCat == 57 | SpeciesCat == 58 ~ "5",
-    SpeciesCat == 74 | SpeciesCat == 76 | SpeciesCat == 77 ~ "7"
-  )) 
+check <- projection_turfs %>% 
+  filter(turf == 1)
+
+projection_turfs %>% 
+  group_by(CatchShare) %>% 
+  count()
+
+
+main_cat <- str_extract_all(projection_turfs$SpeciesCat,"^\\d", simplify = TRUE)
+
+projection_turfs$MainCat <- main_cat
+
+# projection_turfs <- projection_turfs  %>%
+#   mutate(MainCat = case_when(
+#     SpeciesCat == 22 | SpeciesCat == 23 | SpeciesCat == 24 ~ "2",
+#     SpeciesCat == 31 | SpeciesCat == 32 | SpeciesCat == 33 | SpeciesCat == 34 | SpeciesCat     == 35 | SpeciesCat == 37 ~ "3",
+#     SpeciesCat == 42 | SpeciesCat == 43 | SpeciesCat == 44 | SpeciesCat == 45 | SpeciesCat      == 47 ~ "4",
+#     SpeciesCat == 52 | SpeciesCat == 53 | SpeciesCat ==54 |  SpeciesCat == 55 | SpeciesCat     == 56 | SpeciesCat == 57 | SpeciesCat == 58 ~ "5",
+#     SpeciesCat == 74 | SpeciesCat == 76 | SpeciesCat == 77 ~ "7"
+#   )) 
 
 
 gdp <- gdp_all %>%
@@ -412,34 +431,53 @@ gdp <- gdp_all %>%
   filter( gdp_center != "NA") 
 
 #question here, will the filter remove out when year is NA? the turf data doesn't have this resolution; edf does have start date though
-join_mutate <- left_join(projection_turfs_mutate, gdp, by = "Country") %>% 
+catch_shares <- left_join(projection_turfs, gdp, by = "Country") %>% 
   group_by(IdOrig) %>%
   dplyr::mutate(max_year = max(Year)) %>% 
-  filter(max_year== 2012)
+  filter(max_year== 2012,
+         CatchShare %in% c(0,1),
+         !is.na(gdp_center),
+         !is.na(MainCat),
+         Year == max_year) %>% 
+  ungroup() %>% 
+  mutate(MainCat = factor(MainCat))
 
-join_mutate$MainCat <- factor(join_mutate$MainCat)
+catch_shares_and_turfs <- left_join(projection_turfs, gdp, by = "Country") %>% 
+  group_by(IdOrig) %>%
+  dplyr::mutate(max_year = max(Year)) %>% 
+  filter(max_year== 2012,
+         CatchShare %in% c(1,2),
+          !is.na(gdp_center),
+         Year == max_year) %>% 
+  ungroup() %>% 
+  mutate(MainCat = factor(MainCat)) %>% 
+  mutate(CatchShare = CatchShare - 1)
 
-downjoin <- caret::downSample(x = select(join_mutate,-CatchShare),
-                              y = factor(join_mutate$CatchShare),
+everything <- left_join(projection_turfs, gdp, by = "Country") %>% 
+  group_by(IdOrig) %>%
+  dplyr::mutate(max_year = max(Year)) %>% 
+  filter(max_year== 2012,
+         Year == max_year,
+                   !is.na(gdp_center)) %>% 
+  ungroup() %>% 
+  mutate(MainCat = factor(MainCat))
+
+
+
+```
+
+```{r is-catch-share}
+
+downjoin <- caret::upSample(x = select(catch_shares,-CatchShare),
+                              y = factor(catch_shares$CatchShare),
                               yname = "CatchShare")
-downjoin %>% 
-  ggplot(aes(log(MSY),fill = CatchShare)) + 
-  geom_density()
 
-                 
+
 itq_broad_fit <-
   glm(
     formula = CatchShare ~ gdp_center + MainCat + log(MSY),
     family = "binomial",
     data = downjoin
-  )
-
-bayes_itq_broad_fit <-
-  rstanarm::stan_glmer(
-    formula = CatchShare ~ gdp_center + (1|MainCat),
-    family = "binomial",
-    data = downjoin,
-    cores = 4
   )
 
 
@@ -448,9 +486,9 @@ summary(itq_broad_fit)
 aug_itq_broad_fit <- broom::augment(itq_broad_fit) %>% 
   mutate(pred = predict(itq_broad_fit, type = "response"))
 
-orig_itq_broad_fit <- join_mutate %>% 
+orig_itq_broad_fit <- catch_shares %>% 
   ungroup() %>% 
-  mutate(pred = predict(itq_broad_fit, type = "response", newdata = join_mutate))
+  mutate(pred = predict(itq_broad_fit, type = "response", newdata = catch_shares))
 
 
   catchshare_pred_plot <- orig_itq_broad_fit %>%
@@ -462,23 +500,115 @@ orig_itq_broad_fit <- join_mutate %>%
        caption = "Classified as catch share if p>0.5") +
   scale_x_continuous(limits = c(0, 1), expand = c(0, .01))
 
-aug_itq_broad_fit %>% 
-  ggplot(aes(gdp_center, pred, color = MainCat)) + 
-  geom_point()
-
-aug_itq_broad_fit %>% 
-  ggplot(aes(MainCat, pred)) + 
-  geom_boxplot()
-
-
-
-catchshare_pred_plot
 
 g <- pROC::roc(CatchShare ~ pred, data = orig_itq_broad_fit)
 
-pROC::ggroc(g) + 
+catch_share_roc <- pROC::ggroc(g) + 
   geom_abline(aes(intercept = 1, slope =  1), color = "red") + 
   labs(x = "")
+
+```
+
+
+```{r turf-v-cs}
+
+
+upjoin <-
+  caret::upSample(
+    x = select(catch_shares_and_turfs, -CatchShare),
+    y = factor(catch_shares_and_turfs$CatchShare),
+    yname = "CatchShare"
+  ) 
+
+
+cs_or_turf_fit <-
+  glm(
+    formula = CatchShare ~ gdp_center + SpeciesCatName,
+    family = "binomial",
+    data = upjoin
+  )
+
+
+summary(cs_or_turf_fit)
+
+aug_fit <- broom::augment(cs_or_turf_fit) %>% 
+  mutate(pred = predict(cs_or_turf_fit, type = "response"))
+
+orig_cs_or_turf_fit <- catch_shares_and_turfs %>%
+  ungroup() %>%
+  mutate(pred = predict(cs_or_turf_fit, type = "response", newdata = catch_shares_and_turfs))
+
+
+  cs_or_turf_pred_plot <- orig_cs_or_turf_fit %>%
+  ggplot(aes(pred, CatchShare == 1, fill = CatchShare == 1)) +
+  ggridges::geom_density_ridges(show.legend = FALSE, alpha = 0.75) +
+  geom_vline(aes(xintercept = 0.5), linetype = 2, color = "red") +
+  labs(y = "Is TURF?",
+       x = "Probability of TURF",
+       caption = "Classified as TURF if p>0.5") +
+  scale_x_continuous(limits = c(0, 1), expand = c(0, .01))
+
+
+g <- pROC::roc(CatchShare ~ pred, data = orig_cs_or_turf_fit)
+
+catch_share_turf_roc <- pROC::ggroc(g) + 
+  geom_abline(aes(intercept = 1, slope =  1), color = "red") + 
+  labs(x = "")
+
+```
+
+```{r multinom}
+
+upjoin <-
+  caret::upSample(
+    x = select(everything, -CatchShare),
+    y = factor(everything$CatchShare),
+    yname = "CatchShare"
+  ) 
+
+
+everything_fit <-
+  multinom(
+    formula = CatchShare ~ gdp_center + SpeciesCatName,
+    family = "binomial",
+    data = upjoin
+  )
+
+orig_everything_fit <- everything %>%
+  ungroup() %>%
+  mutate(pred = predict(everything_fit, type = "class", newdata = everything))
+
+confusion_matrix <- orig_everything_fit %>% 
+  group_by(CatchShare,pred) %>% 
+  summarise(n = length(MSY), tmsy = sum(MSY, na.rm = T)) %>% 
+  filter(!is.na(pred)) %>% 
+  ungroup() %>% 
+  # group_by(CatchShare) %>% 
+  mutate(pn = n / sum(n),
+         pmsy = tmsy / sum(tmsy)) %>% 
+  mutate(pnn = scales::percent(pn, accuracy = 1),
+         pnm = scales::percent(pmsy, accuracy = 1)) %>% 
+  ungroup() %>% 
+  mutate(CatchShare = fct_recode(factor(CatchShare),"Catch Share" = "1", "Non-RBFM" = "0", "TURF" = "2")) %>% 
+  mutate(pred = fct_recode(factor(pred),"Catch Share" = "1", "Non-RBFM" = "0", "TURF" = "2"))
+
+confusion_matrix %>% 
+  ggplot() + 
+  geom_tile(aes(pred,CatchShare,fill = pn),color = "black",alpha = 0.25) +
+  geom_text(aes(pred, CatchShare, label = pnn)) +
+  scale_fill_viridis_c() + 
+  scale_x_discrete(position = "top", name = "Predicted Management") + 
+  labs(y = "Observed Management")
+
+confusion_matrix %>% 
+  ggplot() + 
+  geom_tile(aes(pred,CatchShare,fill = pmsy),color = "black",alpha = 0.25) +
+  geom_text(aes(pred, CatchShare, label = pnm)) +
+  scale_fill_viridis_c() + 
+  scale_x_discrete(position = "top", name = "Predicted Management") + 
+  labs(y = "Observed Management")
+
+
 
 ```
 
