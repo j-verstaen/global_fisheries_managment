@@ -449,10 +449,11 @@ aug_itq_broad_fit <- broom::augment(itq_broad_fit) %>%
   mutate(pred = predict(itq_broad_fit, type = "response"))
 
 orig_itq_broad_fit <- join_mutate %>% 
+  ungroup() %>% 
   mutate(pred = predict(itq_broad_fit, type = "response", newdata = join_mutate))
 
 
-catchshare_pred_plot <- orig_itq_broad_fit %>%
+  catchshare_pred_plot <- orig_itq_broad_fit %>%
   ggplot(aes(pred, CatchShare == 1, fill = CatchShare == 1)) +
   ggridges::geom_density_ridges(show.legend = FALSE, alpha = 0.75) +
   geom_vline(aes(xintercept = 0.5), linetype = 2, color = "red") +
