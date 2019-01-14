@@ -875,7 +875,7 @@ Using that approach, authors have estimated a benefit of global RBFM between \$X
 
 - “current annual net benefits from marine capture fisheries are tens of billions of U.S. dollars less than the potential benefits”
 ```{r}
-include_graphics("sunkenbillionstable.png")
+knitr::include_graphics("sunkenbillionstable.png")
 ```
 
 3. Updated Sunken Billions (2012)
