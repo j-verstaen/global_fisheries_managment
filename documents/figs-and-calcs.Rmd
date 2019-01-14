@@ -10,9 +10,19 @@ library(tidyverse)
 library(readxl)
 library(tidyxl)
 library(here)
+library(hrbrthemes)
+library(extrafont)
+
+extrafont::loadfonts()
 
 fisheries_recent <- read_csv(here("processed_data","fisheries_recent.csv"))%>% 
   janitor::clean_names()
+
+fig_width <- 8
+
+fig_height <- 6
+
+theme_set(theme_ipsum(base_size = 14))
 
 ```
 
@@ -36,28 +46,36 @@ projection_data_fig1 <- readRDS(here("data","projection_data.rds")) %>%
   filter(IdLevel != "Neis")
 
 projection_data_fig1$Dbase[projection_data_fig1$Dbase == "RAM"]<- "Stock Assessed"
-projection_data_fig1$Dbase[projection_data_fig1$Dbase == "FAO"]<- "Stock Not Assessed"
+projection_data_fig1$Dbase[projection_data_fig1$Dbase == "FAO"]<- "Unassessed"
 
 assessed <- projection_data_fig1%>% filter(Dbase == "Stock Assessed")
-notassessed <- projection_data_fig1 %>% filter(Dbase == "Stock Not Assessed")
+notassessed <- projection_data_fig1 %>% filter(Dbase == "Unassessed")
+
+medians <- assessed %>% 
+  bind_rows(notassessed) %>% 
+  group_by(Dbase) %>% 
+  summarise(median_b = median(BvBmsy),
+            median_f = median(FvFmsy))
+
 
 fig_1 = projection_data_fig1 %>%
-  ggplot(aes(BvBmsy, FvFmsy, colour = Dbase, size =MSY, alpha = MSY)) + 
-  geom_point() + 
-  coord_cartesian(xlim = c(0,3), ylim = c(0,4))+
-  scale_alpha(range = c(0.5, 1))+
-  theme_minimal() +
+  ggplot() + 
   geom_hline(aes(yintercept=1))+
   geom_vline(aes(xintercept=1))+
+  geom_point(aes(BvBmsy, FvFmsy, colour = Dbase, size =MSY, alpha = MSY)) + 
+  coord_cartesian(xlim = c(0,2.5), ylim = c(0,4))+
+  theme_minimal() +
   xlab("B/Bmsy")+
   ylab("F/Fmsy") +
-  ggtitle("Figure 1")+
-  geom_point(data= assessed, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "red", shape = 17) +
-  geom_point(data= notassessed, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "blue", shape = 17)
-  
+    geom_point(data= medians, aes(x=median_b,y=median_f, fill = Dbase),shape = 24, size = 10, alpha = 0.75)  + 
+  scale_color_discrete(name = '') + 
+    scale_fill_discrete(name = '') + 
+  scale_size_continuous(labels = scales::comma) + 
+  scale_alpha_continuous(labels = scales::comma, range = c(0.25,1))
+
 fig_1
 
-#ggsave(here("documents/figures","figure-1.pdf"), fig_1)
+ggsave(here("figures","figure-1.pdf"), fig_1, width = fig_width, height = fig_height)
 
 
 ```
@@ -99,13 +117,14 @@ projection_spatial$CatchShare <- as.factor(projection_spatial$CatchShare)
 projection_spatial <- st_as_sf(projection_spatial) 
 
 fig_2 = ggplot() +
-  geom_sf(data= projection_spatial, aes(fill = CatchShare)) +
-  ggtitle("Figure 2")
+  geom_sf(data= projection_spatial, aes(fill = CatchShare == 1), size = 0.1) +
+  scale_fill_discrete(name = "Has Catch Shares?") + 
+  ggthemes::theme_map()
   
 
-fig_2
+# fig_2
 
-#ggsave(here("documents/figures","figure-2.pdf"), fig_2)
+ggsave(here("figures","figure-2.pdf"), fig_2, height = fig_height, width = fig_width)
 
 ```
 
@@ -130,23 +149,32 @@ projection_data_fig3$CatchShare[projection_data_fig3$CatchShare == "1"]<- "RBFM"
 rbfm <- projection_data_fig3%>% filter(CatchShare == "RBFM")
 no_rbfm <- projection_data_fig3 %>% filter(CatchShare == "No RBFM")
 
+medians <- rbfm %>% 
+  bind_rows(no_rbfm) %>% 
+  group_by(CatchShare) %>% 
+  summarise(median_b = median(BvBmsy),
+            median_f = median(FvFmsy))
+
 fig_3 = projection_data_fig3 %>%
-  ggplot(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY)) + 
-  geom_point() + 
-  coord_cartesian(xlim = c(0,3), ylim = c(0,4))+
-  scale_alpha(range = c(0.5, 1))+
-  theme_minimal() +
+  # mutate(CatchShare = ifelse(CatchShare == 1, "RBFM","No RBFM")) %>% 
+  ggplot() + 
   geom_hline(aes(yintercept=1))+
   geom_vline(aes(xintercept=1))+
+  geom_point(aes(BvBmsy, FvFmsy, colour = CatchShare, size =MSY, alpha = MSY)) + 
+  coord_cartesian(xlim = c(0,2.5), ylim = c(0,4))+
+  theme_minimal() +
   xlab("B/Bmsy")+
   ylab("F/Fmsy") +
-  ggtitle("Figure 3") +
-  geom_point(data= rbfm, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "red", shape = 17) +
-  geom_point(data= no_rbfm, aes(x=median(BvBmsy),y=median(FvFmsy)),size = 3 ,color= "blue", shape = 17)
-  
+    geom_point(data= medians, aes(x=median_b,y=median_f, fill = CatchShare),shape = 24, size = 10, alpha = 0.75)  + 
+  scale_color_discrete(name = '') + 
+    scale_fill_discrete(name = '') + 
+  scale_size_continuous(labels = scales::comma) + 
+  scale_alpha_continuous(labels = scales::comma, range = c(0.25,1))
+
 fig_3
 
-#ggsave(here("documents/figures","figure-3.pdf"), fig_3)
+ggsave(here("figures","figure-3.pdf"), fig_3, height = fig_height, width = fig_width)
+
 ```
 
 
@@ -155,12 +183,196 @@ fig_3
 ## figure 4 bioeconomic figure to show in principle why you get increase in value from RBFM
 
 
+```{r fig-4}
+r <- 0.2
+
+k <- 100
+
+p <- 2
+
+msy <- r*k/4
+
+b_oa <- 0.25
+
+f_oa <- 2 - b_oa
+
+cost <- (p*msy * f_oa * b_oa) / (f_oa * r/2)^2
+
+
+demo <- tibble(biomass = seq(0,k, by = .1)) %>% 
+  mutate(b = biomass / (k / 2),
+         f = 2 - b,
+         Costs = cost * (f * r/2)^2,
+         Profits = p * msy * f * b - Costs,
+         Revenue =  p * msy * f * b,
+         catch = msy * f * b) 
+
+b_mey <- demo$biomass[demo$Profits == max(demo$Profits)][1]
+
+
+demo <- demo %>% 
+  gather(metric,value, -biomass)
+
+
+figure_4 <- demo %>% 
+  filter(tolower(metric) %in% c("profits", "costs", "revenue")) %>% 
+  ggplot() + 
+  geom_line(aes(biomass,value, color = metric), size = 2) + 
+  ggsci::scale_color_simpsons(name = "") + 
+  theme_classic() + 
+  labs(y = "Value", x = "Fish Biomass") + 
+  geom_vline(aes(xintercept = b_oa * k / 2), color = "red", linetype = 2) + 
+  geom_vline(aes(xintercept = b_mey), color = "blue", linetype = 2) + 
+  scale_x_continuous(expand = c(0,0)) + 
+  scale_y_continuous(expand = expand_scale(mult = 0, add = c(0, .2)), limits = c(0,NA),
+                     breaks = c(0,max(demo$value)), labels = c("Low","High"))
+
+
+figure_4
+ggsave(here("figures","figure-4.pdf"), figure_4, height = fig_height, width = fig_width)
+```
+
+
 Simple bioeconomic model represntation illustrating the mechanisms by which RBFM can increase fishery profit, food provision, and biomass of fish
 
 
 ## figure 5 is global fishing watch, JC
 
 ## figure 6 figure of bionomic equilibrium and shift in cost downward 
+
+
+repeat analysis but with a grid of F/Fmsy by discount rate and cost parameter
+
+find fopt for any given scenario
+```{r fig-6, cache = TRUE}
+
+scenes <- purrr::cross_df(list(cost = seq(100,1500, by = 50), 
+                               discount = seq(0,0.5, by = 0.01)))
+
+
+popfoo <- function(f,cost, discount,r,k,p,d0 = 1,beta, time = 100, use = 0){
+  
+  
+  out <-
+    tibble(
+      b = rep(NA, time)
+    )
+  
+  out$b[1] <- k * d0
+  
+  for (t in 2:(time)) {
+    out$b[t] <-
+      out$b[t - 1] + out$b[t - 1] * r * (1 - out$b[t - 1] / k) - f * out$b[t - 1]
+    
+  }
+  
+  out <- out %>% 
+    mutate(f_rate = f,
+           catches = b * f_rate,
+           revenue = p * catches,
+           costs = cost*f_rate^2,
+           profits = revenue - costs,
+           year = seq_along(b))
+  
+  npv <- sum(out$profits * (1 + discount)^-(0:(time - 1)))
+  
+if (use == 0){
+  out <- -npv
+} else {
+  out <- out
+}
+  
+}
+
+test <- nlminb(.05, popfoo, cost = 0, discount = 0, r = 0.2, k = 100, p = 2, beta = 2, lower = 0, upper = 0.99, time = 1000)
+
+
+check <- popfoo(f = test$par,cost = 0, discount = 0, r = 0.2, k = 100, p = 2, beta = 2,use = 2, time = 1000)
+
+
+fmeyfoo <- function(cost,discount,r = 0.2,k = 100,p = 2,beta = 2, time = 1000){
+  
+  out <- nlminb(r/2,popfoo,cost = cost, discount = discount, r = r, k = k, p = p, beta = beta,use = 0, time = time)
+
+  out <- out$par
+
+}
+
+r <- 0.2
+
+k <- 100
+
+p <- 2
+
+beta <- 2
+
+time <- 200
+
+results <- scenes %>%
+  mutate(fmey = map2_dbl(
+    cost,
+    discount,
+    fmeyfoo,
+    r = r,
+    k = k,
+    p = p,
+    beta = beta,
+    time = time
+  )) %>%
+  mutate(mey_pop = pmap(
+    list(
+      f = fmey,
+      cost = cost,
+      discount = discount
+    ),
+    popfoo,
+      r = r,
+      k = k,
+      p = p,
+      beta = beta,
+      use = 2,
+      time = time
+    )
+  )
+
+
+results <- results %>% 
+  unnest()
+
+
+
+figure_6 <- results %>%
+  filter(year == max(year)) %>%
+  ggplot() +
+  geom_raster(aes(cost, discount, fill = b / (k/2)),
+              interpolate = TRUE) +
+  scale_x_continuous(
+    expand = c(0, 0),
+    breaks = c(min(scenes$cost), 750, 1500),
+    labels = c("Low", "Medium", "High"),
+    name = "Fishing Costs"
+  ) +
+  scale_y_continuous(expand = c(0, 0),
+                     name = "Discount Rate",
+                     labels = scales::percent) +
+  scale_fill_gradient2(
+    low = "tomato",
+    mid = "white",
+    high = "steelblue",
+    midpoint = 1,
+    name = "Bmey",
+    guide = guide_colorbar(frame.colour = "black",
+                           barheight = unit(15, "lines")),
+    limits = c(0,2)
+  ) + 
+  theme(panel.border = element_rect(color = "black",
+                                    fill = "transparent"))
+
+
+figure_6
+
+ggsave(here("figures","figure-6.pdf"), figure_6, height = fig_height, width = fig_width)
+```
 
 
 # calculations
@@ -301,15 +513,18 @@ What factors drive the adoption of various forms of RBFM? Anecdotal evidence sug
 
 ```{r}
 
+projection_data <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic")
 unique(turf_catch_upper$assess_id_short)
 #27 fisheries with turfs
 
 itqs <-projection_corb%>%
   filter(itq == "TRUE" | ivq == "TRUE" | iq == "TRUE")
-unique(itqs$assess_id_short)
+# unique(itqs$assess_id_short)
 #94
 
 turf_all_1 <- full_join(edf_turf, d_turfs, by= c("Country", "SciName"))
+
 projection_turf <- projection_corb %>%
   filter(turf == "TRUE") %>%
   select("Country", "SciName")
@@ -568,7 +783,7 @@ upjoin <-
 
 
 everything_fit <-
-  multinom(
+  nnet::multinom(
     formula = CatchShare ~ gdp_center + SpeciesCatName,
     family = "binomial",
     data = upjoin
