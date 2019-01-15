@@ -405,10 +405,8 @@ Using data from (Costello et al., 2016), we can identify which of the fisheries 
 projection_data_line65 <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic") %>%
   group_by(IdOrig) %>% 
-  filter(Year == max(Year))%>%
-  filter(Dbase == "FAO") %>%
-  filter(IdLevel != "Neis")%>%
-  filter(CatchShare == "1")
+  filter(Year == 2012) %>%
+  filter(CatchShare == 1)
 
 itq_catch <- sum(projection_data_line65$Catch)
 
@@ -462,13 +460,13 @@ projection_corb_2 <- left_join(projection_corb_1, edf_turf, by = c("Country", "S
 ###lower bounds just includes upside/corbette because those have fishery IDs associated with it so sure that those fisheies have turfs, the upper bound incorporates discover turfs and EDF data and links the country/scienfitic name of species to fisheries 
 
 turf_catch_lower <- projection_corb%>%
-  filter(turf == "TRUE")
+  filter(turf == TRUE)
 sum(turf_catch_lower$Catch)
 #301,000 lower limit
 
 turf_catch_upper <- projection_corb_2%>%
-  filter(turf == "TRUE")
-sum(turf_catch_upper$Catch)
+  filter(turf == TRUE)
+scales::percent(sum(turf_catch_upper$Catch) / 80e6, 1)
 #1,370,210 upper limit
 #upper bound of total percent of global catch from turf:
 1370210/80000000
@@ -477,7 +475,7 @@ sum(turf_catch_upper$Catch)
 ###cooperative estimates
 coop_catch <- projection_corb%>%
   filter(coop == "TRUE")
-sum(coop_catch$Catch)
+(sum(coop_catch$Catch)/ 80e6) %>% scales::percent(1)
 #443231
 #percent of global catch from coop:
 443231/80000000
@@ -500,11 +498,26 @@ sum(rbfm_catch_up$Catch)
 #0.1116556
 
 #reported_2016 <- projection_corb_2 %>% filter(Year == "2016")
-
+  
                       
 
 ```
 
+
+## line 69
+
+based on this calculation, we find that
+
+```{r}
+
+a= projection_data %>% 
+  filter(Year == 2012) %>% 
+  group_by(Country, CatchShare) %>% 
+  count()
+
+
+scales::percent(mean(a$CatchShare),1)
+```
 
 
 ## line 92
@@ -578,24 +591,35 @@ Broader ISSCAAP Categories
 52-58 = molluscs = 5
 74,76,77 = miscellaneous aquatic animals = 7
 
-```{r}
+```{r prepare-data}
 
 #upside projection data
 projection_data <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic")
 
+
+
+taxa_lookup <- projection_data %>% 
+  select(SciName, SpeciesCat, SpeciesCatName) %>% unique()
+
+projection_data$clean_country <- countrycode::countrycode(projection_data$Country,"country.name","country.name")
+
 #GDP data
-gdp_all <- read_excel(here("data","un_gdp_2016.xls"))
+gdp <- read_excel(here("data","un_gdp_2016.xls")) %>% 
+  mutate(clean_country = countrycode::countrycode(Country,"country.name","country.name"))
 
 #EDF TURF data
-edf_turf <- read_excel(here("data/EDF_TURF_data.xlsx"))%>%
-  select("Country", "SciName","CatchShare") %>%
-  filter(SciName != "NA")
+edf_turf <- read_excel(here("data/EDF_TURF_data.xlsx")) %>%
+  select("Country", "SciName", "CatchShare") %>%
+  filter(SciName != "NA") %>%
+  mutate(clean_country = countrycode::countrycode(Country, "country.name", "country.name"))
 
 #DiscoverTURFs data
 d_turfs <- read_excel(here("data/DiscoverTURFs_simple.xlsx")) %>%
   select("Country", "SciName", "CatchShare") %>%
-  filter(SciName != "NA")
+  filter(SciName != "NA") %>% 
+    mutate(clean_country = countrycode::countrycode(Country,"country.name","country.name"))
+
 
 #ISSCAAP Codes
 isscaap <- read_csv(here("data/meta_isscaap_codes.csv"))
@@ -603,7 +627,7 @@ isscaap <- read_csv(here("data/meta_isscaap_codes.csv"))
 
 #get turf data to have species category codes
 
-all_turfs <- dplyr::full_join(d_turfs, edf_turf, by= c("Country", "SciName", "CatchShare")) %>%
+all_turfs <- dplyr::full_join(d_turfs, edf_turf, by= c("clean_country", "SciName", "CatchShare")) %>%
   distinct()
 
 turfs <-
@@ -614,10 +638,40 @@ turfs <-
   mutate(turf = 1,
          Year = 2012)
 
+cooperatives <- read_csv(here("data","clean_cooperatives_data.csv")) 
+
+coop_scinames <- taxize::comm2sci(unique(cooperatives$target_species))
+
+coops_names <- tibble(target_species = unique(cooperatives$target_species), SciName =  coop_scinames)  %>% 
+  unnest() 
+
+coops <- cooperatives %>% 
+  select(fishery_id, host_country, target_species) %>% 
+  left_join(coops_names, by = "target_species") %>% 
+  left_join(taxa_lookup, by = c("SciName" = "SciName")) %>% filter(!is.na(SpeciesCat)) %>% 
+     mutate(clean_country = countrycode::countrycode(host_country,"country.name","country.name")) %>% 
+  mutate(cooperative = 1)
+
+
+projection_data %>% 
+  filter(Year == 2012) %>% 
+  group_by(CatchShare) %>% 
+  summarise(tc = sum(Catch, na.rm = T))
+
 #add the turf data to upside
-projection_turfs <- full_join(projection_data, turfs, by = c("Country", "SciName", "SpeciesCat","Year"), all = T) %>% 
+projection_turfs <- full_join(projection_data, turfs, by = c("clean_country", "SciName", "SpeciesCat","Year"), all = T) %>% 
   mutate(turf = ifelse(is.na(turf),0,1)) %>% 
-  mutate(CatchShare = ifelse(turf == 1,2, CatchShare))
+  mutate(CatchShare = ifelse(turf == 1,2, CatchShare)) %>%
+  left_join(coops %>% select(SciName, clean_country, cooperative), by = c("SciName", "clean_country")) %>% 
+  left_join(gdp, by = "clean_country") %>% 
+    mutate(turf = ifelse(cooperative == 1,1,turf)) 
+
+  
+
+projection_turfs %>% 
+  filter(Year == 2012) %>% 
+  group_by(CatchShare) %>% 
+  summarise(tc = sum(Catch, na.rm = T))
 
 check <- projection_turfs %>% 
   filter(turf == 1)
@@ -641,12 +695,12 @@ projection_turfs$MainCat <- main_cat
 #   )) 
 
 
-gdp <- gdp_all %>%
-  select(Country, gdp_center) %>%
-  filter( gdp_center != "NA") 
+# gdp <- gdp_all %>%
+#   select(Country, gdp_center) %>%
+#   filter( gdp_center != "NA") 
 
 #question here, will the filter remove out when year is NA? the turf data doesn't have this resolution; edf does have start date though
-catch_shares <- left_join(projection_turfs, gdp, by = "Country") %>% 
+catch_shares <- projection_turfs %>% 
   group_by(IdOrig) %>%
   dplyr::mutate(max_year = max(Year)) %>% 
   filter(max_year== 2012,
@@ -657,7 +711,7 @@ catch_shares <- left_join(projection_turfs, gdp, by = "Country") %>%
   ungroup() %>% 
   mutate(MainCat = factor(MainCat))
 
-catch_shares_and_turfs <- left_join(projection_turfs, gdp, by = "Country") %>% 
+catch_shares_and_turfs <- projection_turfs %>% 
   group_by(IdOrig) %>%
   dplyr::mutate(max_year = max(Year)) %>% 
   filter(max_year== 2012,
@@ -666,9 +720,12 @@ catch_shares_and_turfs <- left_join(projection_turfs, gdp, by = "Country") %>%
          Year == max_year) %>% 
   ungroup() %>% 
   mutate(MainCat = factor(MainCat)) %>% 
-  mutate(CatchShare = CatchShare - 1)
+  mutate(CatchShare = CatchShare - 1) %>% 
+  select(-gdp) %>% 
+  rename(TURF = CatchShare,
+         gdp = gdp_center)
 
-everything <- left_join(projection_turfs, gdp, by = "Country") %>% 
+everything <- projection_turfs %>% 
   group_by(IdOrig) %>%
   dplyr::mutate(max_year = max(Year)) %>% 
   filter(max_year== 2012,
@@ -727,24 +784,34 @@ catch_share_roc <- pROC::ggroc(g) +
 
 ```{r turf-v-cs}
 
-
+catch_shares_and_turfs %>% 
+  filter(Year == 2012) %>% 
+group_by(TURF) %>% 
+  summarise(n = length(Catch),
+            tc = sum(Catch, na.rm = T))
 upjoin <-
   caret::upSample(
-    x = select(catch_shares_and_turfs, -CatchShare),
-    y = factor(catch_shares_and_turfs$CatchShare),
-    yname = "CatchShare"
+    x = select(catch_shares_and_turfs, -TURF),
+    y = factor(catch_shares_and_turfs$TURF),
+    yname = "TURF"
   ) 
 
 
 cs_or_turf_fit <-
   glm(
-    formula = CatchShare ~ gdp_center + SpeciesCatName,
+    formula = TURF ~ gdp + SpeciesCatName,
     family = "binomial",
-    data = upjoin
+    data = catch_shares_and_turfs 
   )
 
 
-summary(cs_or_turf_fit)
+covar_names <-  broom::tidy(cs_or_turf_fit)$term %>% 
+  str_replace_all("SpeciesCatName","")
+
+stargazer::stargazer(cs_or_turf_fit,
+                     covariate.labels =covar_names,
+                     intercept.top = TRUE,
+                     intercept.bottom = FALSE)
 
 aug_fit <- broom::augment(cs_or_turf_fit) %>% 
   mutate(pred = predict(cs_or_turf_fit, type = "response"))
@@ -753,9 +820,54 @@ orig_cs_or_turf_fit <- catch_shares_and_turfs %>%
   ungroup() %>%
   mutate(pred = predict(cs_or_turf_fit, type = "response", newdata = catch_shares_and_turfs))
 
+temp <- projection_turfs %>%
+  filter(SpeciesCatName %in% unique(catch_shares_and_turfs$SpeciesCatName),
+         Year == 2012) %>% 
+  select(-gdp) %>% 
+  rename(gdp = gdp_center)
 
+global_cs_or_turf_fit <- temp %>%
+  ungroup() %>%
+  mutate(pred = 1 - predict(cs_or_turf_fit, type = "response", newdata = temp)) %>% 
+  mutate(rbfm_type = ifelse(pred > 0.5, "ITQ","TURF"))
+
+rbfm_pred_summary <- global_cs_or_turf_fit %>% 
+  filter(!is.na(rbfm_type), CatchShare == 0) %>% 
+  group_by(rbfm_type) %>% 
+  summarise(n = length(MSY),
+            tmsy = sum(MSY, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(pn = n / sum(n),
+         pmsy = tmsy / sum(tmsy))
+
+
+country_pred_summary <- global_cs_or_turf_fit %>%
+  filter(!is.na(rbfm_type), CatchShare == 0,!is.na(clean_country)) %>%
+  group_by(clean_country, rbfm_type) %>%
+  summarise(n = length(MSY),
+            tmsy = sum(MSY, na.rm = TRUE)) %>%
+  group_by(clean_country) %>%
+  mutate(pn = n / sum(n),
+         pmsy = tmsy / sum(tmsy)) %>%
+  mutate(ttmsy = sum(tmsy)) %>% 
+  ungroup() %>% 
+  select(clean_country,ttmsy, rbfm_type,pmsy) %>% 
+  spread(rbfm_type,pmsy, fill = 0) %>% 
+  arrange(desc(ttmsy)) %>% 
+  slice(1:20) %>% 
+  mutate(`MSY Rank` = 1:nrow(.)) %>% 
+  select(-ttmsy) %>% 
+  rename("Country" = "clean_country") %>% 
+  select(Country, `MSY Rank`, ITQ,TURF) %>% 
+  mutate(ITQ = scales::percent(ITQ,1),
+         TURF = scales::percent(TURF,1))
+
+
+knitr::kable(country_pred_summary, format = "latex", longtable = TRUE)
+  
+  
   cs_or_turf_pred_plot <- orig_cs_or_turf_fit %>%
-  ggplot(aes(pred, CatchShare == 1, fill = CatchShare == 1)) +
+  ggplot(aes(pred, TURF == 1, fill = TURF == 1)) +
   ggridges::geom_density_ridges(show.legend = FALSE, alpha = 0.75) +
   geom_vline(aes(xintercept = 0.5), linetype = 2, color = "red") +
   labs(y = "Is TURF?",
@@ -764,7 +876,7 @@ orig_cs_or_turf_fit <- catch_shares_and_turfs %>%
   scale_x_continuous(limits = c(0, 1), expand = c(0, .01))
 
 
-g <- pROC::roc(CatchShare ~ pred, data = orig_cs_or_turf_fit)
+g <- pROC::roc(TURF ~ pred, data = orig_cs_or_turf_fit)
 
 catch_share_turf_roc <- pROC::ggroc(g) + 
   geom_abline(aes(intercept = 1, slope =  1), color = "red") + 
@@ -882,6 +994,21 @@ knitr::include_graphics("sunkenbillionstable.png")
 
 -	economic losses of about $83 billion
 
+## line 249
+
+```{r}
+
+recent <- projection_data %>% 
+  filter(Year == 2012,
+         Scenario == "Historic")
+
+dim(recent)
+
+sum(recent$Catch)
+
+62399651 / 80e6
+
+```
 
 
 
