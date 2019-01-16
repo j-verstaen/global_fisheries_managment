@@ -1057,3 +1057,31 @@ mpas <- readxl::read_xlsx(here("data","MPA Analysis. Country Analysis.xlsx"), sh
 
 ```
 
+# line 246
+
+XXX Get this table from Juliette
+
+\begin{center}
+\begin{tabular}{c|c|c|c|}
+Benefit or Cost & Estimate (Annual) & Method & Source\\\hline\hline
+Benefit & \$50 Billion & Global Aggregate & \shortcite{Sunken2009}\\
+Benefit & \$80 Billion & Global Aggregate & \shortcite{Sunken2017}\\
+Benefit & \$XX Billion & Fishery-by-Fishery & \shortcite{Costello2016}\\\hline
+Cost & \$XX Billion & Fishery-by-Fishery & \shortcite{Mangin2018}\\
+\end{tabular}
+\end{center}
+
+
+# mpa table
+
+As a result of these potential conservation and fishery effects, MPAs have been increasingly proposed as a solution to global fisheries sustainability. For example, the Convention on Biological Diversity's Strategic Plan for Biodiversity  call for 10\% of coastal waters to be protected inside MPAs by 2020. This call has been accompanied by the creation of large MPAs in places such as XX and XX. Table XXX shows the area covered by MPAs in the top-10 MPA countries of the world.  Together, the MPAs in these countries represent the vast majority (XXX\%) of global coverage of MPAs, recognizing that the total global ocean covered by MPAs is still very small (XXX\%). 
+
+XXX Juliette please fill out this table using spreadsheet I sent
+\begin{center}
+\begin{tabular}{c|c|c|c|c|}
+Country & MPA Size (km2) & \% EEZ Covered & Cum. \% Global MPAs & Cum. \% Ocean Coverage\\\hline\hline
+USA & 100 & 10\% & 2\% & .1\%\\\hline
+Global & xx & xx & xx & xx\\
+\end{tabular}
+\end{center}
+
