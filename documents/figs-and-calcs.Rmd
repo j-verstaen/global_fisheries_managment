@@ -884,8 +884,6 @@ knitr::include_graphics("sunkenbillionstable.png")
 
 
 
-
-
 ## line 120
 
 adopt this bottom up approach, and develop fishery-by-fishery bioeconomic models for 4,7XX fisheries around the world, representing XXX\% of global fish catch. Using that sample, \cite{Upside} estimate an increase in catch of XXX, an increase in biomass of XXX, and an annual economic benefit from RBFM of \$XXX Billion. Scaling this number up by the fraction of catch missing in the database, provides an annual estimate of \$XXX Billion.
@@ -915,7 +913,6 @@ global_summaries <- fisheries_recent %>%
   group_by(dbase) %>% 
   summarise(total_catch = sum(catch, na.rm = T),
             n = n_distinct(assess_id_short))
-
 
 
 ```
