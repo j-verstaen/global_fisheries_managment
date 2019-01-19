@@ -22,7 +22,10 @@ fig_width <- 8
 
 fig_height <- 6
 
-theme_set(theme_ipsum(base_size = 14))
+theme_set(theme_ipsum(base_size = 16) + theme(axis.title.x = element_text(size = 18), axis.title.y = element_text(size = 18)))
+
+projection_data <- readRDS(here("data","projection_data.rds")) %>% 
+  filter(Scenario == "Historic")
 
 ```
 
@@ -115,6 +118,9 @@ projection_spatial$CatchShare <- as.numeric(projection_spatial$CatchShare)
 projection_spatial[is.na(projection_spatial)] <- 0
 projection_spatial$CatchShare <- as.factor(projection_spatial$CatchShare)
 projection_spatial <- st_as_sf(projection_spatial) 
+
+projection_spatial <-  projection_spatial %>% 
+    st_transform(crs = "+proj=moll +datum=WGS84")
 
 fig_2 = ggplot() +
   geom_sf(data= projection_spatial, aes(fill = CatchShare == 1), size = 0.1) +
@@ -214,6 +220,19 @@ demo <- demo %>%
   gather(metric,value, -biomass)
 
 
+labels <- demo %>% 
+  spread(metric,value) %>% 
+  mutate(oa = abs(Costs - Revenue))
+
+oa_y <- labels$Costs[labels$oa == min(labels$oa)][1]
+
+profits_y <- labels$Costs[labels$Profits == max(labels$Profits)][1]
+
+labs <- dplyr::tibble(x = c(b_oa * k / 2,b_mey),
+                      y = c(oa_y, profits_y),
+                      labs = c("A","B"))
+
+
 figure_4 <- demo %>% 
   filter(tolower(metric) %in% c("profits", "costs", "revenue")) %>% 
   ggplot() + 
@@ -225,7 +244,9 @@ figure_4 <- demo %>%
   geom_vline(aes(xintercept = b_mey), color = "blue", linetype = 2) + 
   scale_x_continuous(expand = c(0,0)) + 
   scale_y_continuous(expand = expand_scale(mult = 0, add = c(0, .2)), limits = c(0,NA),
-                     breaks = c(0,max(demo$value)), labels = c("Low","High"))
+                     breaks = c(0,max(demo$value)), labels = c("Low","High")) + 
+  ggrepel::geom_text_repel(data = labs,aes(x, y, label = labs),
+                            force =  20, size = 10)
 
 
 figure_4
@@ -352,6 +373,7 @@ figure_6 <- results %>%
     labels = c("Low", "Medium", "High"),
     name = "Fishing Costs"
   ) +
+  stat_contour(breaks=c(1),aes(cost, discount, z = b / (k/2)), color ="black")+
   scale_y_continuous(expand = c(0, 0),
                      name = "Discount Rate",
                      labels = scales::percent) +
@@ -597,6 +619,14 @@ Broader ISSCAAP Categories
 projection_data <- readRDS(here("data","projection_data.rds")) %>% 
   filter(Scenario == "Historic")
 
+prices <- read_csv(here("data", "Exvessel Price Database.csv")) %>%
+  janitor::clean_names() %>%
+  rename(scientificname = scientific_name) %>%
+  mutate(log_exvessel = log(exvessel)) %>%
+  group_by(asfis_species, pooled_commodity, group_for_pairing) %>%
+  mutate(lag_exvessel = lag(exvessel)) %>%
+  ungroup()
+
 
 
 taxa_lookup <- projection_data %>% 
@@ -659,19 +689,39 @@ projection_data %>%
   summarise(tc = sum(Catch, na.rm = T))
 
 #add the turf data to upside
-projection_turfs <- full_join(projection_data, turfs, by = c("clean_country", "SciName", "SpeciesCat","Year"), all = T) %>% 
-  mutate(turf = ifelse(is.na(turf),0,1)) %>% 
-  mutate(CatchShare = ifelse(turf == 1,2, CatchShare)) %>%
-  left_join(coops %>% select(SciName, clean_country, cooperative), by = c("SciName", "clean_country")) %>% 
-  left_join(gdp, by = "clean_country") %>% 
-    mutate(turf = ifelse(cooperative == 1,1,turf)) 
+projection_turfs <-
+  full_join(
+    projection_data,
+    turfs,
+    by = c("clean_country", "SciName", "SpeciesCat", "Year"),
+    all = T
+  ) %>%
+  mutate(turf = ifelse(is.na(turf), 0, 1)) %>%
+  left_join(
+    coops %>% select(SciName, clean_country, cooperative),
+    by = c("SciName", "clean_country")
+  ) %>%
+  mutate(cooperative = ifelse(is.na(cooperative), 0, 1)) %>%
+  left_join(gdp, by = "clean_country") %>%
+  mutate(CatchShare = ifelse(is.na(CatchShare), 0, CatchShare)) %>%
+  mutate(CatchShare2 = dplyr::case_when(CatchShare == 1 ~ 1,
+                                        turf == 1 ~ 2,
+                                        cooperative == 1 ~ 3,
+                                        TRUE ~ 0)) %>%
+  mutate(turf = ifelse(cooperative == 1, 1, turf)) %>%
+  mutate(CatchShare = ifelse(turf == 1, 2, CatchShare)) %>%
+  left_join(prices, by = c("SciName" = "scientificname", 'Year' = 'year')) %>%
+  filter(Year == 2012) %>%
+  group_by(CatchShare) %>%
+  mutate(Catch = ifelse(is.na(Catch), mean(Catch, na.rm = TRUE), Catch)) %>%
+  ungroup()
 
-  
 
 projection_turfs %>% 
   filter(Year == 2012) %>% 
-  group_by(CatchShare) %>% 
-  summarise(tc = sum(Catch, na.rm = T))
+  group_by(CatchShare2) %>% 
+  summarise(tc = sum(Catch, na.rm = T)) %>% 
+  mutate(pcatch = scales::percent(tc / 80e6, accuracy = 1))
 
 check <- projection_turfs %>% 
   filter(turf == 1)
@@ -747,7 +797,7 @@ downjoin <- caret::upSample(x = select(catch_shares,-CatchShare),
 
 itq_broad_fit <-
   glm(
-    formula = CatchShare ~ gdp_center + MainCat + log(MSY),
+    formula = CatchShare ~ gdp_center + MainCat + log(MSY) + exvessel,
     family = "binomial",
     data = downjoin
   )
@@ -799,7 +849,7 @@ upjoin <-
 
 cs_or_turf_fit <-
   glm(
-    formula = TURF ~ gdp + SpeciesCatName,
+    formula = TURF ~ gdp + SpeciesCatName + Catch,
     family = "binomial",
     data = catch_shares_and_turfs 
   )
