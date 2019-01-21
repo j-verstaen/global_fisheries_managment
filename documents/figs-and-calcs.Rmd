@@ -382,7 +382,7 @@ figure_6 <- results %>%
     mid = "white",
     high = "steelblue",
     midpoint = 1,
-    name = "Bmey",
+    name = "B*/Bmsy",
     guide = guide_colorbar(frame.colour = "black",
                            barheight = unit(15, "lines")),
     limits = c(0,2)
@@ -839,6 +839,12 @@ catch_shares_and_turfs %>%
 group_by(TURF) %>% 
   summarise(n = length(Catch),
             tc = sum(Catch, na.rm = T))
+
+catch_shares_and_turfs %>% 
+  group_by(MainCat) %>% 
+  count()
+
+
 upjoin <-
   caret::upSample(
     x = select(catch_shares_and_turfs, -TURF),
@@ -846,22 +852,27 @@ upjoin <-
     yname = "TURF"
   ) 
 
+ fit_recipe <- recipes::recipe( ~ SpeciesCat, data = catch_shares_and_turfs) %>% 
+     step_other(SpeciesCat, threshold = .02, other = "other values")
+
+rec <- prep(fit_recipe, training = catch_shares_and_turfs, retain = TRUE)
+
+dat <- juice(rec)
+ dat %>% group_by(SpeciesCat) %>% count()
+ 
+ catch_shares_and_turfs$short_SpeciesCat <- dat$SpeciesCat
 
 cs_or_turf_fit <-
   glm(
-    formula = TURF ~ gdp + SpeciesCatName + Catch,
+    formula = TURF ~ gdp + short_SpeciesCat,
     family = "binomial",
     data = catch_shares_and_turfs 
   )
 
 
+
 covar_names <-  broom::tidy(cs_or_turf_fit)$term %>% 
   str_replace_all("SpeciesCatName","")
-
-stargazer::stargazer(cs_or_turf_fit,
-                     covariate.labels =covar_names,
-                     intercept.top = TRUE,
-                     intercept.bottom = FALSE)
 
 aug_fit <- broom::augment(cs_or_turf_fit) %>% 
   mutate(pred = predict(cs_or_turf_fit, type = "response"))
@@ -870,9 +881,16 @@ orig_cs_or_turf_fit <- catch_shares_and_turfs %>%
   ungroup() %>%
   mutate(pred = predict(cs_or_turf_fit, type = "response", newdata = catch_shares_and_turfs))
 
+
+pROC::auc(pROC::roc(TURF ~ pred, data = orig_cs_or_turf_fit))
+
+spcat_match <- catch_shares_and_turfs %>% 
+  select(SpeciesCat, short_SpeciesCat) %>% 
+  unique()
+
 temp <- projection_turfs %>%
-  filter(SpeciesCatName %in% unique(catch_shares_and_turfs$SpeciesCatName),
-         Year == 2012) %>% 
+  left_join(spcat_match, by = "SpeciesCat") %>% 
+  filter(!is.na(short_SpeciesCat)) %>% 
   select(-gdp) %>% 
   rename(gdp = gdp_center)
 
@@ -913,7 +931,7 @@ country_pred_summary <- global_cs_or_turf_fit %>%
          TURF = scales::percent(TURF,1))
 
 
-knitr::kable(country_pred_summary, format = "latex", longtable = TRUE)
+knitr::kable(country_pred_summary, format = "latex", longtable = TRUE, booktabs = TRUE)
   
   
   cs_or_turf_pred_plot <- orig_cs_or_turf_fit %>%
@@ -932,6 +950,7 @@ catch_share_turf_roc <- pROC::ggroc(g) +
   geom_abline(aes(intercept = 1, slope =  1), color = "red") + 
   labs(x = "")
 
+summary(cs_or_turf_fit)
 ```
 
 ```{r multinom}
