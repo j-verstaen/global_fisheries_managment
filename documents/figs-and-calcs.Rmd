@@ -1080,8 +1080,6 @@ sum(recent$Catch)
 ```
 
 
-
-
 ## line 120
 
 adopt this bottom up approach, and develop fishery-by-fishery bioeconomic models for 4,7XX fisheries around the world, representing XXX\% of global fish catch. Using that sample, \cite{Upside} estimate an increase in catch of XXX, an increase in biomass of XXX, and an annual economic benefit from RBFM of \$XXX Billion. Scaling this number up by the fraction of catch missing in the database, provides an annual estimate of \$XXX Billion.
@@ -1095,11 +1093,9 @@ https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0204258
 ## line 143
 no-take
 As a result of these potential conservation and fishery effects, MPAs have been increasingly proposed as a solution to global fisheries sustainability. For example, the Convention on Biological Diversity's Strategic Plan for Biodiversity  call for 10\% of coastal waters to be protected inside MPAs by 2020. This call has been accompanied by the creation of large MPAs in places such as XX and XX. Table XXX shows the area covered by MPAs in the top-10 MPA countries of the world.  Together, the MPAs in these countries represent the vast majority (XXX\%) of global coverage of MPAs, recognizing that the total global ocean covered by MPAs is still very small (XXX\%). 
-
 ```{r}
 
 ```
-
 
 
 # rbfm
@@ -1111,7 +1107,6 @@ global_summaries <- fisheries_recent %>%
   group_by(dbase) %>% 
   summarise(total_catch = sum(catch, na.rm = T),
             n = n_distinct(assess_id_short))
-
 
 
 ```
@@ -1139,6 +1134,20 @@ Benefit & \$XX Billion & Fishery-by-Fishery & \shortcite{Costello2016}\\\hline
 Cost & \$XX Billion & Fishery-by-Fishery & \shortcite{Mangin2018}\\
 \end{tabular}
 \end{center}
+
+```{r}
+
+##note: estimate from mangin paper is in 2012. she gives an estimate for 2050 which is 15 billion, but I figured we want the more current one
+bene_cost <- c("Benefit", "Benefit", "Benefit", "Cost")
+estimate <- c("$50 Billion", "$80 Billion", "$53 Billion", "$7.6 Billion")
+method <- c("Global Aggregate", "Global Aggregate", "Fishery-by-Fishery", "Fishery-by-Fishery")
+source <- c("Sunken Billions 2009", "Sunken Billions 2017", "Costello et al 2016", "Mangin et al 2018")
+
+benefit_cost_table <- data.frame(bene_cost, estimate, method, source) 
+  
+colnames(benefit_cost_table) <-c("Benefit or Cost", "Estimate", "Method", "Source")
+  
+```
 
 
 # mpa table
